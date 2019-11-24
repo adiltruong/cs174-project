@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import oracle.jdbc.pool.OracleDataSource;
+import sun.jvm.hotspot.debugger.posix.elf.ELFSectionHeader;
 import oracle.jdbc.OracleConnection;
 
 /**
@@ -54,8 +55,8 @@ public class App implements Testable
 	{
 		// Some constants to connect to your DB.
 		final String DB_URL = "jdbc:oracle:thin:@cs174a.cs.ucsb.edu:1521/orcl";
-		final String DB_USER = "c##YoutNetID";
-		final String DB_PASSWORD = "YourPassword";
+		final String DB_USER = "c##adiltruong";
+		final String DB_PASSWORD = "";
 
 		// Initialize your system.  Probably setting up the DB connection.
 		Properties info = new Properties();
@@ -88,7 +89,49 @@ public class App implements Testable
 			return "1";
 		}
 	}
+	@Override
+	public String dropTable(){
+		String[] tableNames = {"ACCOUNT","BANK","BANKTELLER","CUSTOMER","STATEMENT","TRANSACTION"};
+		try{
+			stmt = _connection.createStatement();
 
+			for(String i : tableNames){
+				String sql = "DROP TABLE " + tableNames[i];
+				stmt.executeUpdate(sql);
+				System.out.println("Table" + tableNames[i] + "deleted in given database...");
+	
+			}
+			return "0";
+		}catch( SQLException e ){
+			System.err.println(e.getMessage());
+			return "1";
+		}
+    }
+
+	/**
+	 * Set system's date.
+	 * @param year Valid 4-digit year, e.g. 2019.
+	 * @param month Valid month, where 1: January, ..., 12: December.
+	 * @param day Valid day, from 1 to 31, depending on the month (and if it's a leap year).
+	 * @return a string "r yyyy-mm-dd", where r = 0 for success, 1 for error; and yyyy-mm-dd is the new system's date, e.g. 2012-09-16.
+	 */
+	String setDate( int year, int month, int day ){
+		try{
+			stmt = _connection.createStatement();
+
+			for(String i : tableNames){
+				String sql = "DROP TABLE " + tableNames[i];
+				stmt.executeUpdate(sql);
+				System.out.println("Table" + tableNames[i] + "deleted in given database...");
+
+			}
+			return ("0 " + year + "-" + month + "-" day);
+		}catch( SQLException e ){
+			System.err.println(e.getMessage());
+			return "1";
+		}
+
+	}
 	/**
 	 * Example of one of the testable functions.
 	 */
