@@ -87,7 +87,7 @@ public class DataSourceSample {
     // Statement and ResultSet are AutoCloseable and closed automatically. 
     try (Statement statement = connection.createStatement()) {      
       try (ResultSet resultSet = statement
-          .executeQuery("select owner,table_name from all_tables")) {
+          .executeQuery("select owner,table_name from all_tables where owner = 'C##ADILTRUONG'")) {
         while (resultSet.next())
           System.out.println(resultSet.getString(1) + " "
               + resultSet.getString(2) + " ");       
