@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import oracle.jdbc.pool.OracleDataSource;
-import sun.jvm.hotspot.debugger.posix.elf.ELFSectionHeader;
+//import sun.jvm.hotspot.debugger.posix.elf.ELFSectionHeader;
 import oracle.jdbc.OracleConnection;
 
 /**
@@ -35,7 +35,7 @@ public class App implements Testable
 		// Statement and ResultSet are AutoCloseable and closed automatically.
 		try( Statement statement = _connection.createStatement() )
 		{
-			try( ResultSet resultSet = statement.executeQuery( "select owner, table_name from all_tables" ) )
+			try( ResultSet resultSet = statement.executeQuery( "select owner, table_name from all_tables where owner = 'C##ADILTRUONG'" ) )
 			{
 				while( resultSet.next() )
 					System.out.println( resultSet.getString( 1 ) + " " + resultSet.getString( 2 ) + " " );
@@ -56,7 +56,7 @@ public class App implements Testable
 		// Some constants to connect to your DB.
 		final String DB_URL = "jdbc:oracle:thin:@cs174a.cs.ucsb.edu:1521/orcl";
 		final String DB_USER = "c##adiltruong";
-		final String DB_PASSWORD = "";
+		final String DB_PASSWORD = "3951795";
 
 		// Initialize your system.  Probably setting up the DB connection.
 		Properties info = new Properties();
@@ -89,25 +89,144 @@ public class App implements Testable
 			return "1";
 		}
 	}
+
 	@Override
-	public String dropTable(){
-		String[] tableNames = {"ACCOUNT","BANK","BANKTELLER","CUSTOMER","STATEMENT","TRANSACTION"};
+	public String dropTables(){
+		String[] tableNames = {"GLOBALDATE","CUSTOMER", "ACCOUNT","OWNS","INTEREST","TRANSACTION"};
 		try{
-			stmt = _connection.createStatement();
+			System.out.println("Connecting to database");
+			Statement stmt = _connection.createStatement();
 
 			for(String i : tableNames){
-				String sql = "DROP TABLE " + tableNames[i];
-				stmt.executeUpdate(sql);
-				System.out.println("Table" + tableNames[i] + "deleted in given database...");
-	
+				try{
+					String sql = "DROP TABLE " + i + " CASCADE CONSTRAINTS";
+					stmt.executeUpdate(sql);
+					System.out.println("Table " + i + " deleted in given database...");
+				} catch (Exception e){
+					System.out.println("Couldn't drop " + i);
+					System.out.println(e);
+					return "1";
+				}
 			}
-			return "0";
-		}catch( SQLException e ){
-			System.err.println(e.getMessage());
+		} catch( Exception e ){
+			System.out.println("Couldn't drop tables");
+			System.out.println(e);
 			return "1";
 		}
+		return "0";
     }
 
+    @Override
+    public String createTables(){
+    	try{
+    		System.out.println("Connecting to database");
+    		Statement statement = _connection.createStatement();
+
+    		try {
+    			System.out.println("Creating table GlobalDate");
+    			String sql = "CREATE TABLE GlobalDate (" +
+    										"did INTEGER, " +
+    										"globalDate CHAR(10), " +
+    										"PRIMARY KEY (did))";
+    			statement.executeUpdate(sql);
+    		} catch (Exception e) {
+    			System.out.println("Failed making GlobalDate");
+    			System.out.println(e);
+    			return "1";
+    		}
+
+    		try {
+    			System.out.println("Creating table Customer");
+    			String sql = "CREATE TABLE Customer (" +
+    										"name CHAR(20), " +
+    										"taxID CHAR(11), " +
+    										"address CHAR(20), " +
+    										"pin CHAR(4) DEFAULT '1717', " +
+    										"PRIMARY KEY (taxID))"; 
+    			statement.executeUpdate(sql);
+    		} catch (Exception e) {
+    			System.out.println("Failed making table Customer");
+    			System.out.println(e);
+    			return "1";
+    		} 
+
+    		try {
+    			System.out.println("Creating table Account");
+    			String sql = "CREATE TABLE Account (" +
+    										"a_type CHAR(10), " +
+    										"balance REAL, " +
+    										"bank_branch CHAR(20), " +
+    										"a_id CHAR(10), " +
+    										"isClosed INTEGER, " +
+    										"linked_id CHAR(10), " +
+    										"primaryOwner CHAR(11), " +
+    										"PRIMARY KEY (a_id), " +
+    										"FOREIGN KEY (primaryOwner) REFERENCES Customer, " +
+    										"FOREIGN KEY (linked_id) REFERENCES Account, " +
+    										"CONSTRAINT CHK_Balance CHECK (balance > 0.0), " +
+    										"CONSTRAINT CHK_Link CHECK ((a_type = 'pocket' AND linked_id IS NOT NULL) OR (a_type != 'pocket' AND linked_id IS NULL)))"; 
+    			statement.executeUpdate(sql);
+    		} catch (Exception e) {
+    			System.out.println("Failed making table Account");
+    			System.out.println(e);
+    			return "1";
+    		}
+
+    		try {
+    			System.out.println("Creating table Owns");
+    			String sql = "CREATE TABLE Owns (" +
+    										"taxID CHAR(9), " +
+    										"a_id CHAR(10), " +
+    										"PRIMARY KEY (taxID, a_id), " +
+    										"FOREIGN KEY (taxID) REFERENCES Customer ON DELETE CASCADE, " +
+    										"FOREIGN KEY (a_id) REFERENCES Account ON DELETE CASCADE )"; 
+    			statement.executeUpdate(sql);
+    		} catch (Exception e) {
+    			System.out.println("Failed making table Owns");
+    			System.out.println(e);
+    			return "1";
+    		}
+    		
+    		try {
+    			System.out.println("Creating table Interest");
+    			String sql = "CREATE TABLE Interest (" +
+    										"type CHAR(32), " +
+    										"int_rate REAL )";
+    			statement.executeUpdate(sql);
+    		} catch (Exception e) {
+    			System.out.println("Failed making table Owns");
+    			System.out.println(e);
+    			return "1";
+    		}
+
+    		try {
+    			System.out.println("Creating table Transaction");
+    			String sql = "CREATE TABLE Transaction (" +
+    										"amount REAL, " +
+    										"t_date DATE, " +
+    										"type CHAR(32), " +
+    										"t_id CHAR(10), " +
+    										"check_no CHAR(10), " +
+    										"rec_id CHAR(10), " +
+    										"send_id CHAR(10), " +
+    										"PRIMARY KEY (t_id), " +
+    										"FOREIGN KEY (rec_id) REFERENCES Account," +
+    										"FOREIGN KEY (send_id) REFERENCES Account )"; 
+    			statement.executeUpdate(sql);
+
+    		} catch (Exception e) {
+    			System.out.println("Failed making table Transaction");
+    			System.out.println(e);
+    			return "1";
+    		}
+    	} catch (Exception e) {
+    		System.out.println("Failed making tables");
+    		System.out.println(e);
+    		return "1";
+    	}
+
+    	return "0";
+    }
 	/**
 	 * Set system's date.
 	 * @param year Valid 4-digit year, e.g. 2019.
@@ -115,21 +234,10 @@ public class App implements Testable
 	 * @param day Valid day, from 1 to 31, depending on the month (and if it's a leap year).
 	 * @return a string "r yyyy-mm-dd", where r = 0 for success, 1 for error; and yyyy-mm-dd is the new system's date, e.g. 2012-09-16.
 	 */
-	String setDate( int year, int month, int day ){
-		try{
-			stmt = _connection.createStatement();
 
-			for(String i : tableNames){
-				String sql = "DROP TABLE " + tableNames[i];
-				stmt.executeUpdate(sql);
-				System.out.println("Table" + tableNames[i] + "deleted in given database...");
-
-			}
-			return ("0 " + year + "-" + month + "-" day);
-		}catch( SQLException e ){
-			System.err.println(e.getMessage());
-			return "1";
-		}
+	@Override
+	public String setDate( int year, int month, int day ){
+		return "r";
 
 	}
 	/**
@@ -148,5 +256,85 @@ public class App implements Testable
 	public String createCheckingSavingsAccount( AccountType accountType, String id, double initialBalance, String tin, String name, String address )
 	{
 		return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
+	}
+
+	@Override
+	public String createPocketAccount( String id, String linkedId, double initialTopUp, String tin )
+	{
+		return "r";
+	}
+
+	/**
+	 * Create a new customer and link them to an existing checking or saving account.
+	 * @param accountId Existing checking or saving account.
+	 * @param tin New customer's Tax ID number.
+	 * @param name New customer's name.
+	 * @param address New customer's address.
+	 * @return a string "r", where r = 0 for success, 1 for error.
+	 */
+	@Override
+	public String createCustomer( String accountId, String tin, String name, String address )
+	{
+		return "r";
+	}
+
+	/**
+	 * Deposit a given amount of dollars to an existing checking or savings account.
+	 * @param accountId Account ID.
+	 * @param amount Non-negative amount to deposit.
+	 * @return a string "r old new" where
+	 *         r = 0 for success, 1 for error;
+	 *         old is the old account balance, with up to 2 decimal places (e.g. 1000.12, as with %.2f); and
+	 *         new is the new account balance, with up to 2 decimal places.
+	 */
+	@Override
+	public String deposit( String accountId, double amount )
+	{
+		return "r";
+	}
+
+	/**
+	 * Show an account balance (regardless of type of account).
+	 * @param accountId Account ID.
+	 * @return a string "r balance", where
+	 *         r = 0 for success, 1 for error; and
+	 *         balance is the account balance, with up to 2 decimal places (e.g. with %.2f).
+	 */
+	@Override
+	public String showBalance( String accountId )
+	{
+		return "r";
+	}
+
+	/**
+	 * Move a specified amount of money from the linked checking/savings account to the pocket account.
+	 * @param accountId Pocket account ID.
+	 * @param amount Non-negative amount to top up.
+	 * @return a string "r linkedNewBalance pocketNewBalance", where
+	 *         r = 0 for success, 1 for error;
+	 *         linkedNewBalance is the new balance of linked account, with up to 2 decimal places (e.g. with %.2f); and
+	 *         pocketNewBalance is the new balance of the pocket account.
+	 */
+	@Override
+	public String topUp( String accountId, double amount )
+	{
+		return "r";
+	}
+
+	/**
+	 * Move a specified amount of money from one pocket account to another pocket account.
+	 * @param from Source pocket account ID.
+	 * @param to Destination pocket account ID.
+	 * @param amount Non-negative amount to pay.
+	 * @return a string "r fromNewBalance toNewBalance", where
+	 *         r = 0 for success, 1 for error.
+	 *         fromNewBalance is the new balance of the source pocket account, with up to 2 decimal places (e.g. with %.2f); and
+	 *         toNewBalance is the new balance of destination pocket account, with up to 2 decimal places.
+	 */
+
+	@Override
+	public String payFriend( String from, String to, double amount )
+	{
+		return "r";
 	}
 }
