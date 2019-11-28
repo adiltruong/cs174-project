@@ -1,0 +1,27 @@
+<project>
+    
+    <target name="clean">
+        <delete dir="build"/>
+    </target>
+    
+    <target name="compile">
+        <delete dir="build"/>
+        <mkdir dir="build"/>
+        <javac srcdir="src"
+            fork = "true"
+            destdir="build"
+            includeantruntime="false"
+            debug="true"
+            debuglevel="lines,vars,source"/>
+    </target>
+    
+    <target name="run">
+        <java classname="Main" fork = "true">
+            <classpath>
+                <pathelement path="build"/>
+                <pathelement location="lib/ojdbc6.jar"/>
+            </classpath>
+        </java>
+    </target>
+    
+</project>

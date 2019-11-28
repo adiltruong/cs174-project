@@ -138,8 +138,8 @@ public class App implements Testable
     		try {
     			System.out.println("Creating table Customer");
     			String sql = "CREATE TABLE Customer (" +
-    										"name CHAR(20), " +
-    										"taxID CHAR(11), " +
+    										"name CHAR(20) NOT NULL, " +
+    										"taxID CHAR(11) NOT NULL, " +
     										"address CHAR(20), " +
     										"pin CHAR(4) DEFAULT '1717', " +
     										"PRIMARY KEY (taxID))"; 
@@ -154,17 +154,16 @@ public class App implements Testable
     			System.out.println("Creating table Account");
     			String sql = "CREATE TABLE Account (" +
     										"a_type CHAR(10), " +
-    										"balance REAL, " +
+    										"balance DECIMAL(*,2), " +
     										"bank_branch CHAR(20), " +
     										"a_id CHAR(10), " +
     										"isClosed INTEGER, " +
+    										"interest_rate DECIMAL(*,2), " +
+    										"closedDate DATE," +
     										"linked_id CHAR(10), " +
-    										"primaryOwner CHAR(11), " +
-    										"PRIMARY KEY (a_id), " +
-    										"FOREIGN KEY (primaryOwner) REFERENCES Customer, " +
-    										"FOREIGN KEY (linked_id) REFERENCES Account, " +
-    										"CONSTRAINT CHK_Balance CHECK (balance > 0.0), " +
-    										"CONSTRAINT CHK_Link CHECK ((a_type = 'pocket' AND linked_id IS NOT NULL) OR (a_type != 'pocket' AND linked_id IS NULL)))"; 
+    										"current_month_int_added CHAR(3), " +
+    										"pocket_month_fee DECIMAL(*,2), " +
+    										"PRIMARY KEY (a_id)) ";
     			statement.executeUpdate(sql);
     		} catch (Exception e) {
     			System.out.println("Failed making table Account");
@@ -177,9 +176,8 @@ public class App implements Testable
     			String sql = "CREATE TABLE Owns (" +
     										"taxID CHAR(9), " +
     										"a_id CHAR(10), " +
-    										"PRIMARY KEY (taxID, a_id), " +
-    										"FOREIGN KEY (taxID) REFERENCES Customer ON DELETE CASCADE, " +
-    										"FOREIGN KEY (a_id) REFERENCES Account ON DELETE CASCADE )"; 
+    										"isPrimaryOwner CHAR(3), " +
+    										"PRIMARY KEY (taxID, a_id)) ";
     			statement.executeUpdate(sql);
     		} catch (Exception e) {
     			System.out.println("Failed making table Owns");
@@ -187,31 +185,18 @@ public class App implements Testable
     			return "1";
     		}
     		
-    		try {
-    			System.out.println("Creating table Interest");
-    			String sql = "CREATE TABLE Interest (" +
-    										"type CHAR(32), " +
-    										"int_rate REAL )";
-    			statement.executeUpdate(sql);
-    		} catch (Exception e) {
-    			System.out.println("Failed making table Owns");
-    			System.out.println(e);
-    			return "1";
-    		}
 
     		try {
     			System.out.println("Creating table Transaction");
     			String sql = "CREATE TABLE Transaction (" +
-    										"amount REAL, " +
+    										"amount DECIMAL(*,2), " +
     										"t_date DATE, " +
     										"type CHAR(32), " +
     										"t_id CHAR(10), " +
     										"check_no CHAR(10), " +
-    										"rec_id CHAR(10), " +
-    										"send_id CHAR(10), " +
-    										"PRIMARY KEY (t_id), " +
-    										"FOREIGN KEY (rec_id) REFERENCES Account," +
-    										"FOREIGN KEY (send_id) REFERENCES Account )"; 
+    										"a_id CHAR(10), " +
+    										"c_id CHAR(10) NOT NULL, " +
+    										"PRIMARY KEY (a_id, c_id)) ";
     			statement.executeUpdate(sql);
 
     		} catch (Exception e) {
@@ -237,7 +222,77 @@ public class App implements Testable
 
 	@Override
 	public String setDate( int year, int month, int day ){
-		return "r";
+		String sYear = Integer.toString(year);
+		String sMonth = Integer.toString(month);
+		String sDay = Integer.toString(day);
+
+		if(sMonth.length() < 2) {
+			sMonth = "0" + sMonth;
+		}
+		if (sDay.length() < 2) {
+			sDay = "0" + sDay;
+		}
+		String s = sYear + "-" + sMonth + "-" + sDay;
+
+		if(sYear.length() != 4) { //wrong year format
+			System.out.println("Invalid Year");
+			return "1"+s;
+		} 
+
+		else if (month < 1 || month > 12) {
+			System.out.println("Invalid Month");
+			return "1"+s;
+		}
+
+		else if (day < 1 || day >31) {
+			System.out.println("Invalid Day");
+			return "1" +s;
+		}
+
+		else {
+			if (month == 2 && year%4 ==0) {
+				if (day > 29){
+					System.out.println("Invalid Day Feb Leap Year");
+					return "1"+s;
+				}
+			}
+
+			else if (month == 2) {
+				if (day > 28) {
+					System.out.println("Invalid Day Feb Not Leap Year");
+					return "1"+s;
+				}
+			}
+
+			else if (month == 4) {
+				if (day > 30) {
+					System.out.println("Invalid Day April");
+					return "1"+s;
+				}
+			}
+
+			else if (month == 6) {
+				if (day > 30) {
+					System.out.println("Invalid Day June");
+					return "1"+s;
+				}
+			}
+
+			else if (month == 9) {
+				if (day > 30) {
+					System.out.println("Invalid Day June");
+					return "1"+s;
+				}
+			}
+
+			else if (month == 11) {
+				if (day >30) {
+					System.out.println("Invalid Day Novemember");
+					return "1"+s;
+				}
+			}
+		}
+		return "1" + s;
 
 	}
 	/**
