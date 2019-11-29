@@ -126,7 +126,7 @@ public class App implements Testable
     			System.out.println("Creating table GlobalDate");
     			String sql = "CREATE TABLE GlobalDate (" +
     										"did INTEGER, " +
-    										"globalDate CHAR(10), " +
+    										"globalDate DATE, " +
     										"PRIMARY KEY (did))";
     			statement.executeUpdate(sql);
     		} catch (Exception e) {
@@ -138,8 +138,8 @@ public class App implements Testable
     		try {
     			System.out.println("Creating table Customer");
     			String sql = "CREATE TABLE Customer (" +
-    										"name CHAR(20) NOT NULL, " +
-    										"taxID CHAR(11) NOT NULL, " +
+    										"name CHAR(20), " +
+    										"taxID CHAR(11), " +
     										"address CHAR(20), " +
     										"pin CHAR(4) DEFAULT '1717', " +
     										"PRIMARY KEY (taxID))"; 
@@ -154,16 +154,17 @@ public class App implements Testable
     			System.out.println("Creating table Account");
     			String sql = "CREATE TABLE Account (" +
     										"a_type CHAR(10), " +
-    										"balance DECIMAL(*,2), " +
+    										"balance REAL, " +
     										"bank_branch CHAR(20), " +
     										"a_id CHAR(10), " +
     										"isClosed INTEGER, " +
-    										"interest_rate DECIMAL(*,2), " +
-    										"closedDate DATE," +
     										"linked_id CHAR(10), " +
-    										"current_month_int_added CHAR(3), " +
-    										"pocket_month_fee DECIMAL(*,2), " +
-    										"PRIMARY KEY (a_id)) ";
+    										"primaryOwner CHAR(11), " +
+    										"PRIMARY KEY (a_id), " +
+    										"FOREIGN KEY (primaryOwner) REFERENCES Customer, " +
+    										"FOREIGN KEY (linked_id) REFERENCES Account, " +
+    										"CONSTRAINT CHK_Balance CHECK (balance > 0.0), " +
+    										"CONSTRAINT CHK_Link CHECK ((a_type = 'pocket' AND linked_id IS NOT NULL) OR (a_type != 'pocket' AND linked_id IS NULL)))"; 
     			statement.executeUpdate(sql);
     		} catch (Exception e) {
     			System.out.println("Failed making table Account");
@@ -176,8 +177,9 @@ public class App implements Testable
     			String sql = "CREATE TABLE Owns (" +
     										"taxID CHAR(9), " +
     										"a_id CHAR(10), " +
-    										"isPrimaryOwner CHAR(3), " +
-    										"PRIMARY KEY (taxID, a_id)) ";
+    										"PRIMARY KEY (taxID, a_id), " +
+    										"FOREIGN KEY (taxID) REFERENCES Customer ON DELETE CASCADE, " +
+    										"FOREIGN KEY (a_id) REFERENCES Account ON DELETE CASCADE )"; 
     			statement.executeUpdate(sql);
     		} catch (Exception e) {
     			System.out.println("Failed making table Owns");
@@ -185,18 +187,31 @@ public class App implements Testable
     			return "1";
     		}
     		
+    		try {
+    			System.out.println("Creating table Interest");
+    			String sql = "CREATE TABLE Interest (" +
+    										"type CHAR(32), " +
+    										"int_rate REAL )";
+    			statement.executeUpdate(sql);
+    		} catch (Exception e) {
+    			System.out.println("Failed making table Owns");
+    			System.out.println(e);
+    			return "1";
+    		}
 
     		try {
     			System.out.println("Creating table Transaction");
     			String sql = "CREATE TABLE Transaction (" +
-    										"amount DECIMAL(*,2), " +
+    										"amount REAL, " +
     										"t_date DATE, " +
     										"type CHAR(32), " +
     										"t_id CHAR(10), " +
     										"check_no CHAR(10), " +
-    										"a_id CHAR(10), " +
-    										"c_id CHAR(10) NOT NULL, " +
-    										"PRIMARY KEY (a_id, c_id)) ";
+    										"rec_id CHAR(10), " +
+    										"send_id CHAR(10), " +
+    										"PRIMARY KEY (t_id), " +
+    										"FOREIGN KEY (rec_id) REFERENCES Account," +
+    										"FOREIGN KEY (send_id) REFERENCES Account )"; 
     			statement.executeUpdate(sql);
 
     		} catch (Exception e) {
@@ -233,75 +248,122 @@ public class App implements Testable
 			sDay = "0" + sDay;
 		}
 		String s = sYear + "-" + sMonth + "-" + sDay;
-
 		if(sYear.length() != 4) { //wrong year format
 			System.out.println("Invalid Year");
-			return "1"+s;
+			return "1 "+s;
 		} 
 
 		else if (month < 1 || month > 12) {
 			System.out.println("Invalid Month");
-			return "1"+s;
+			return "1 "+s;
 		}
 
 		else if (day < 1 || day >31) {
 			System.out.println("Invalid Day");
-			return "1" +s;
+			return "1 " +s;
 		}
 
 		else {
 			if (month == 2 && year%4 ==0) {
 				if (day > 29){
 					System.out.println("Invalid Day Feb Leap Year");
-					return "1"+s;
+					return "1 "+s;
 				}
 			}
 
 			else if (month == 2) {
 				if (day > 28) {
 					System.out.println("Invalid Day Feb Not Leap Year");
-					return "1"+s;
+					return "1 "+s;
 				}
 			}
 
 			else if (month == 4) {
 				if (day > 30) {
 					System.out.println("Invalid Day April");
-					return "1"+s;
+					return "1 "+s;
 				}
 			}
 
 			else if (month == 6) {
 				if (day > 30) {
 					System.out.println("Invalid Day June");
-					return "1"+s;
+					return "1 "+s;
 				}
 			}
 
 			else if (month == 9) {
 				if (day > 30) {
 					System.out.println("Invalid Day June");
-					return "1"+s;
+					return "1 "+s;
 				}
 			}
 
 			else if (month == 11) {
 				if (day >30) {
 					System.out.println("Invalid Day Novemember");
-					return "1"+s;
+					return "1 "+s;
 				}
 			}
 		}
-		return "1" + s;
 
+		try {
+
+				Statement stmt = _connection.createStatement();
+				System.out.println("Writing to table GlobalDate");
+				try{
+
+					String sqlDate = "1,"+ "DATE'"+s+"'";
+					String sql = "INSERT INTO GlobalDate VALUES ("+sqlDate+")";
+					stmt.executeUpdate(sql);
+
+				} catch(Exception e) {
+					System.out.println("Failed to write in GlobalDate.");
+					System.out.println(e);
+				}
+			} catch (Exception e) {
+				System.out.println("Failed to connect to DB.");
+				System.out.println(e);
+			}
+
+		return "0 " + s;
 	}
+	
 	/**
 	 * Example of one of the testable functions.
 	 */
 	@Override
 	public String listClosedAccounts()
 	{
-		return "0 it works!";
+		String s = "0";
+
+		try {
+			Statement stmt = _connection.createStatement();
+
+			try {
+				String sql = "SELECT a_id " +
+							 "FROM Account " +
+							 "WHERE isClosed = 1";
+				ResultSet r = stmt.executeQuery(sql);
+
+				if (r==null){
+					return s;
+				}
+
+				while(r.next()) {
+					s += r.getString("a_id");
+					s += " ";
+				}
+			} catch (Exception e) {
+				System.out.println("Failed select a_id");
+				System.out.println(e);
+				return "1";
+			}
+		} catch (Exeception e) {
+			System.out.println("Failed connecting to DB");
+			System.out.println(e);
+		}
+		return s;
 	}
 
 	/**
@@ -355,9 +417,17 @@ public class App implements Testable
 	 *         r = 0 for success, 1 for error; and
 	 *         balance is the account balance, with up to 2 decimal places (e.g. with %.2f).
 	 */
+
+	//select from accounts
+	//update balance = balance + amount
+
 	@Override
 	public String showBalance( String accountId )
 	{
+		//check if id exists, if not return "1";
+		//check if isClosed = 1, if yes, return "0 0.00"
+		//return "0"+ Double.toString();
+
 		return "r";
 	}
 
@@ -373,6 +443,8 @@ public class App implements Testable
 	@Override
 	public String topUp( String accountId, double amount )
 	{
+		//basic functionality: check account won't close, accounts exist, $5 fee to linked account
+		//pocketBalance, linkedBalance after, deny if make balance < 0 or close if balance < 0.0
 		return "r";
 	}
 
@@ -390,6 +462,10 @@ public class App implements Testable
 	@Override
 	public String payFriend( String from, String to, double amount )
 	{
+		//check if both friends have a pocket account
+		//check if both friends have a valid balance
+		//from balance = balance - amount
+		//to balance = balance + amount
 		return "r";
 	}
 }

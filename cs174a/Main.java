@@ -27,7 +27,9 @@ public class Main
 		{
 			app.dropTables();
 			app.createTables();
-			app.exampleAccessToDB();                // Example on how to connect to the DB.
+			//app.exampleAccessToDB();                // Example on how to connect to the DB.
+			r = app.setDate(2011,3,1);
+			System.out.println(r);
 
 			// Example tests.  We'll overwrite your Main.main() function with our final tests.
 			r = app.listClosedAccounts();
