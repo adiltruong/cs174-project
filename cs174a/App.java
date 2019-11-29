@@ -80,14 +80,16 @@ public class App implements Testable
 			System.out.println( "Default Row Prefetch Value is: " + _connection.getDefaultRowPrefetch() );
 			System.out.println( "Database Username is: " + _connection.getUserName() );
 			System.out.println();
-
-			return "0";
 		}
 		catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
 			return "1";
 		}
+
+		dropTables();
+		createTables();
+		return "0";
 	}
 
 	@Override
@@ -359,7 +361,7 @@ public class App implements Testable
 				System.out.println(e);
 				return "1";
 			}
-		} catch (Exeception e) {
+		} catch (Exception e) {
 			System.out.println("Failed connecting to DB");
 			System.out.println(e);
 		}

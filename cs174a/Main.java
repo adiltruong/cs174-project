@@ -25,8 +25,6 @@ public class Main
 		String r = app.initializeSystem();          // We'll always call this function before testing your system.
 		if( r.equals( "0" ) )
 		{
-			app.dropTables();
-			app.createTables();
 			//app.exampleAccessToDB();                // Example on how to connect to the DB.
 			r = app.setDate(2011,3,1);
 			System.out.println(r);
