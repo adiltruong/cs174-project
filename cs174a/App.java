@@ -492,8 +492,25 @@ public class App implements Testable
 		//check if id exists, if not return "1";
 		//check if isClosed = 1, if yes, return "0 0.00"
 		//return "0"+ Double.toString();
+		try(Statement stmt = _connection.createStatement()){
 
-		return "r";
+			String sql = "SELECT a_id, balance, isClosed " +
+					"FROM Account " +
+					"WHERE a_id = " + accountId + " ";
+			ResultSet r = stmt.executeQuery(sql);
+			System.out.println(r);
+			if (!r.next())
+				return "1";
+			else if (r.getInt("isClosed") == 1)
+				return "0 0.00";
+			else
+				return "0 " + r.getString("Balance");
+		}catch (Exception e) {
+			System.out.println("Failed select a_id");
+			System.out.println(e);
+			return "1";
+		}
+
 	}
 
 	/**
