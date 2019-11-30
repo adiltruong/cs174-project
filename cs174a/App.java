@@ -92,8 +92,8 @@ public class App implements Testable
 
 		dropTables();
 		createTables();
-		populate_customers("cs174a/customers.csv");
-		populate_accounts("cs174a/accounts.csv");
+		populate_customers("cs174a/inputs/customers.csv");
+		populate_accounts("cs174a/inputs/accounts.csv");
 		return "0";
 	}
 
@@ -373,10 +373,71 @@ public class App implements Testable
 	/**
 	 * Another example.
 	 */
+	/**
+	 * Create a new checking or savings account.
+	 * If customer is new, then their name and address should be provided.
+	 * @param accountType New account's checking or savings type.
+	 * @param id New account's ID.
+	 * @param initialBalance Initial account balance.
+	 * @param tin Account's owner Tax ID number - it may belong to an existing or new customer.
+	 * @param name [Optional] If customer is new, this is the customer's name.
+	 * @param address [Optional] If customer is new, this is the customer's address.
+	 * @return a string "r aid type balance tin", where
+	 *         r = 0 for success, 1 for error;
+	 *         aid is the new account id;
+	 *         type is the new account's type (see the enum codes above, e.g. INTEREST_CHECKING);
+	 *         balance is the account's initial balance with 2 decimal places (e.g. 1000.34, as with %.2f); and
+	 *         tin is the Tax ID of account's primary owner.
+	 */
 	@Override
 	public String createCheckingSavingsAccount( AccountType accountType, String id, double initialBalance, String tin, String name, String address )
 	{
-		return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
+		if (initialBalance < 1000.0) { 
+			System.out.println("balance too low");
+			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+		}
+
+		/*if (accountType != AccountType.STUDENT_CHECKING || accountType != AccountType.INTEREST_CHECKING || accountType != AccountType.SAVINGS ) {
+			System.out.println("Invalid Type");
+			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+		}*/
+
+		try {
+			Statement stmt = _connection.createStatement();
+
+			ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+id);
+			if (rs.next()) {
+				System.out.println("Account exists");
+				return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+			}
+
+			ResultSet ress = stmt.executeQuery("SELECT taxID FROM Customer WHERE taxID = "+tin);
+			
+			if (!ress.next()) {
+				System.out.println("Customer does not exist");
+				if(name.isEmpty() || address.isEmpty()) {
+					System.out.println("No values to create customer");
+					return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+				}
+				createCustomer(id, tin, name, address);
+				System.out.println("Customer created and account linked");
+				return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
+			}
+
+			else if (ress.next()) {
+				System.out.println("Customer exists");
+				stmt.executeQuery("INSERT INTO Account VALUES ( hello, " + initialBalance + ", CSIL, "+id+", 0, NULL, "+tin+")");
+				stmt.executeQuery("INSERT INTO Owns VALUES (" +id+ ", " + tin + ")");
+				return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
+
+			}
+
+		} catch(Exception e){
+			System.out.println(e);
+			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+
+		}
+		return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 	}
 
 	@Override
@@ -396,7 +457,6 @@ public class App implements Testable
 	@Override
 	public String createCustomer( String accountId, String tin, String name, String address )
 	{
-
 		return "r";
 	}
 
@@ -561,7 +621,7 @@ public class App implements Testable
         			String query = "insert into Owns (taxID, a_id) values ("+
           			tax_id+", " + aid + ")";
 
-        			stmt.execute_query(query);
+        			stmt.executeQuery(query);
 
       			}
     		} catch (IOException e) {
@@ -572,5 +632,5 @@ public class App implements Testable
 		}
 	}
 
-	
+
 }
