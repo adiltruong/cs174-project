@@ -9,6 +9,9 @@ import java.util.Properties;
 import oracle.jdbc.pool.OracleDataSource;
 //import sun.jvm.hotspot.debugger.posix.elf.ELFSectionHeader;
 import oracle.jdbc.OracleConnection;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 /**
  * The most important class for your application.
@@ -89,6 +92,8 @@ public class App implements Testable
 
 		dropTables();
 		createTables();
+		populate_customers("cs174a/customers.csv");
+		populate_accounts("cs174a/accounts.csv");
 		return "0";
 	}
 
@@ -127,9 +132,7 @@ public class App implements Testable
     		try {
     			System.out.println("Creating table GlobalDate");
     			String sql = "CREATE TABLE GlobalDate (" +
-    										"did INTEGER, " +
-    										"globalDate DATE, " +
-    										"PRIMARY KEY (did))";
+    										"globalDate DATE)";
     			statement.executeUpdate(sql);
     		} catch (Exception e) {
     			System.out.println("Failed making GlobalDate");
@@ -140,9 +143,9 @@ public class App implements Testable
     		try {
     			System.out.println("Creating table Customer");
     			String sql = "CREATE TABLE Customer (" +
-    										"name CHAR(20), " +
-    										"taxID CHAR(11), " +
-    										"address CHAR(20), " +
+    										"name CHAR(64), " +
+    										"taxID CHAR(10), " +
+    										"address CHAR(64), " +
     										"pin CHAR(4) DEFAULT '1717', " +
     										"PRIMARY KEY (taxID))"; 
     			statement.executeUpdate(sql);
@@ -155,18 +158,18 @@ public class App implements Testable
     		try {
     			System.out.println("Creating table Account");
     			String sql = "CREATE TABLE Account (" +
-    										"a_type CHAR(10), " +
+    										"a_type CHAR(32), " +
     										"balance REAL, " +
-    										"bank_branch CHAR(20), " +
+    										"bank_branch CHAR(64), " +
     										"a_id CHAR(10), " +
     										"isClosed INTEGER, " +
     										"linked_id CHAR(10), " +
-    										"primaryOwner CHAR(11), " +
+    										"primaryOwner CHAR(10), " +
     										"PRIMARY KEY (a_id), " +
-    										"FOREIGN KEY (primaryOwner) REFERENCES Customer, " +
-    										"FOREIGN KEY (linked_id) REFERENCES Account, " +
+    										"FOREIGN KEY (primaryOwner) REFERENCES Customer(taxID) ON DELETE CASCADE, " +
+    										"FOREIGN KEY (linked_id) REFERENCES Account(a_id) ON DELETE CASCADE, " +
     										"CONSTRAINT CHK_Balance CHECK (balance > 0.0), " +
-    										"CONSTRAINT CHK_Link CHECK ((a_type = 'pocket' AND linked_id IS NOT NULL) OR (a_type != 'pocket' AND linked_id IS NULL)))"; 
+    										"CONSTRAINT CHK_Link CHECK ((a_type = 'Pocket' AND linked_id IS NOT NULL) OR (a_type != 'Pocket' AND linked_id IS NULL)))"; 
     			statement.executeUpdate(sql);
     		} catch (Exception e) {
     			System.out.println("Failed making table Account");
@@ -208,12 +211,11 @@ public class App implements Testable
     										"t_date DATE, " +
     										"type CHAR(32), " +
     										"t_id CHAR(10), " +
-    										"check_no CHAR(10), " +
     										"rec_id CHAR(10), " +
     										"send_id CHAR(10), " +
     										"PRIMARY KEY (t_id), " +
-    										"FOREIGN KEY (rec_id) REFERENCES Account," +
-    										"FOREIGN KEY (send_id) REFERENCES Account )"; 
+    										"FOREIGN KEY (rec_id) REFERENCES Account(a_id) ON DELETE CASCADE," +
+    										"FOREIGN KEY (send_id) REFERENCES Account(a_id) ON DELETE CASCADE )"; 
     			statement.executeUpdate(sql);
 
     		} catch (Exception e) {
@@ -315,7 +317,7 @@ public class App implements Testable
 				System.out.println("Writing to table GlobalDate");
 				try{
 
-					String sqlDate = "1,"+ "DATE'"+s+"'";
+					String sqlDate = "DATE'"+s+"'";
 					String sql = "INSERT INTO GlobalDate VALUES ("+sqlDate+")";
 					stmt.executeUpdate(sql);
 
@@ -394,6 +396,7 @@ public class App implements Testable
 	@Override
 	public String createCustomer( String accountId, String tin, String name, String address )
 	{
+
 		return "r";
 	}
 
@@ -470,4 +473,104 @@ public class App implements Testable
 		//to balance = balance + amount
 		return "r";
 	}
+
+	public static String parse(String s){
+    	return "'" + s.replace("'", "''") + "'";
+  	}
+
+  	public static String parseNULL(String s){
+    	if(s ==null || s.isEmpty()){
+      		return "NULL";
+    	}
+    	else{
+      		return parse(s);
+    	}
+  	}
+
+	void populate_customers(String filename){
+
+    	String line="";
+    	try (Statement stmt = _connection.createStatement()) {
+    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+      			while ((line = br.readLine()) != null) {
+        			String[] columns = line.split(",");
+
+        			String name = parse(columns[0]);
+        			String taxID = parse(columns[1]);
+        			String address = parse(columns[2]);
+        			String pin = parse(columns[3]);
+
+        			String query = "INSERT INTO Customer (name, taxID, address, pin) values ("+
+          			name+", " + taxID + ", " + address + ", " + pin + ")";
+
+        			stmt.executeQuery(query);
+
+      			}
+    		}
+    		catch (IOException e) {
+      			e.printStackTrace();
+    		}
+    	}
+    	catch (Exception e) {
+    		System.out.println("Couldn't connect to database");
+    		System.out.println(e);
+    	}
+  	}
+  	
+
+  	void populate_accounts(String filename){
+    	String line="";
+    	try (Statement stmt = _connection.createStatement()) {
+    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+      			while ((line = br.readLine()) != null) {
+        			String[] columns = line.split(",");
+
+        			String id = parse(columns[0]);
+        			String type = parse(columns[1]);
+        			String branch = parse(columns[2]);
+        			String primary_owner = parse(columns[3]);
+        			String linked_id = parseNULL(columns[4]);
+        			String balance = parse(columns[5]);
+
+        			String query = "INSERT INTO Account (a_id, a_type, bank_branch, PrimaryOwner,  isClosed, linked_id, balance ) values ("+
+            			id+", " + type + ", " + branch + ", " + primary_owner + ", 0, " + linked_id +", "+balance+")";
+
+
+        			stmt.executeQuery(query);
+
+      			}
+    		} catch (IOException e) {
+      			e.printStackTrace();
+    		}
+  		} catch (Exception e) {
+  			System.out.println("Couldn't connect to database");
+  			System.out.println(e);
+  		}
+	}
+
+	void populate_owns(String filename){
+		String line="";
+		try (Statement stmt = _connection.createStatement()) {
+    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+      			while ((line = br.readLine()) != null) {
+        			String[] columns = line.split(",");
+
+        			String tax_id = parse(columns[0]);
+        			String aid = parse(columns[1]);
+
+        			String query = "insert into Owns (taxID, a_id) values ("+
+          			tax_id+", " + aid + ")";
+
+        			stmt.execute_query(query);
+
+      			}
+    		} catch (IOException e) {
+      			e.printStackTrace();
+    		}
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+	}
+
+	
 }
