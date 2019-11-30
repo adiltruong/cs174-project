@@ -36,6 +36,9 @@ public class Main
 			// Another example test.
 			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "account1", 1234.56, "theTaxID", "Im YoungMing", "Known" );
 			System.out.println( r );
+
+			r = app.showBalance("12121");
+			System.out.println("BALANCE for r:" + r);
 		}
 	}
 	//!### FINALIZAMOS

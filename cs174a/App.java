@@ -92,8 +92,8 @@ public class App implements Testable
 
 		dropTables();
 		createTables();
-		populate_customers("cs174a/customers.csv");
-		populate_accounts("cs174a/accounts.csv");
+		populate_customers("cs174a/inputs/customers.csv");
+		populate_accounts("cs174a/inputs/accounts.csv");
 		return "0";
 	}
 
@@ -432,8 +432,25 @@ public class App implements Testable
 		//check if id exists, if not return "1";
 		//check if isClosed = 1, if yes, return "0 0.00"
 		//return "0"+ Double.toString();
+		try(Statement stmt = _connection.createStatement()){
 
-		return "r";
+			String sql = "SELECT a_id, balance, isClosed " +
+					"FROM Account " +
+					"WHERE a_id = " + accountId + " ";
+			ResultSet r = stmt.executeQuery(sql);
+			System.out.println(r);
+			if (!r.next())
+				return "1";
+			else if (r.getInt("isClosed") == 1)
+				return "0 0.00";
+			else
+				return "0 " + r.getString("Balance");
+		}catch (Exception e) {
+			System.out.println("Failed select a_id");
+			System.out.println(e);
+			return "1";
+		}
+
 	}
 
 	/**
@@ -561,7 +578,7 @@ public class App implements Testable
         			String query = "insert into Owns (taxID, a_id) values ("+
           			tax_id+", " + aid + ")";
 
-        			stmt.execute_query(query);
+        			stmt.executeQuery(query);
 
       			}
     		} catch (IOException e) {
