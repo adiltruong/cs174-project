@@ -93,8 +93,8 @@ public class App implements Testable
 
 		dropTables();
 		createTables();
-		populate_customers("cs174a/inputs/customers.csv");
-		populate_accounts("cs174a/inputs/accounts.csv");
+		//populate_customers("cs174a/inputs/customers.csv");
+		//populate_accounts("cs174a/inputs/accounts.csv");
 		return "0";
 	}
 
@@ -145,7 +145,7 @@ public class App implements Testable
     			System.out.println("Creating table Customer");
     			String sql = "CREATE TABLE Customer (" +
     										"name CHAR(64), " +
-    										"taxID CHAR(10), " +
+    										"taxID CHAR(11), " +
     										"address CHAR(64), " +
     										"pin CHAR(4) DEFAULT '1717', " +
     										"PRIMARY KEY (taxID))"; 
@@ -159,13 +159,13 @@ public class App implements Testable
     		try {
     			System.out.println("Creating table Account");
     			String sql = "CREATE TABLE Account (" +
-    										"a_type CHAR(32), " +
-    										"balance REAL, " +
-    										"bank_branch CHAR(64), " +
     										"a_id CHAR(10), " +
+    										"a_type CHAR(32), " +
+    										"bank_branch CHAR(64), " +
+    										"primaryOwner CHAR(11), " +
     										"isClosed INTEGER, " +
     										"linked_id CHAR(10), " +
-    										"primaryOwner CHAR(10), " +
+    										"balance REAL, " +
     										"PRIMARY KEY (a_id), " +
     										"FOREIGN KEY (primaryOwner) REFERENCES Customer(taxID) ON DELETE CASCADE, " +
     										"FOREIGN KEY (linked_id) REFERENCES Account(a_id) ON DELETE CASCADE, " +
@@ -181,7 +181,7 @@ public class App implements Testable
     		try {
     			System.out.println("Creating table Owns");
     			String sql = "CREATE TABLE Owns (" +
-    										"taxID CHAR(10), " +
+    										"taxID CHAR(11), " +
     										"a_id CHAR(10), " +
     										"PRIMARY KEY (taxID, a_id), " +
     										"FOREIGN KEY (taxID) REFERENCES Customer ON DELETE CASCADE, " +
@@ -211,7 +211,7 @@ public class App implements Testable
     										"amount REAL, " +
     										"t_date DATE, " +
     										"type CHAR(32), " +
-    										"t_id CHAR(10), " +
+    										"t_id CHAR(11), " +
     										"rec_id CHAR(10), " +
     										"send_id CHAR(10), " +
     										"PRIMARY KEY (t_id), " +
@@ -460,7 +460,7 @@ public class App implements Testable
 				}
 
 				try {
-					stmt.executeQuery("INSERT INTO Account VALUES ('"+accountType+"', "+initialBalance+", 'CSIL', "+parse(id)+", 0, NULL, "+parse(tin)+")");
+					stmt.executeQuery("INSERT INTO Account VALUES ("+parse(id)+", '"+accountType+"', 'CSIL', "+parse(tin)+", 0, NULL, "+initialBalance+")");
 					System.out.println("Account linked to Customer");
 				} catch(Exception e) {
 					System.out.println("Couldn't add to Account");
@@ -477,7 +477,7 @@ public class App implements Testable
 				}
 
 				try {
-					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialBalance+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', NULL, NULL)");
+					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialBalance+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', NULL, "+parse(id)+")");
 				} catch(Exception e) {
 					System.out.println("Couldn't add to Transactions");
 					System.out.println(e);
@@ -556,7 +556,7 @@ public class App implements Testable
 			}
 
 			try {
-				stmt.executeQuery("INSERT INTO Account VALUES ('POCKET', "+initialTopUp+", 'CSIL', "+parse(id)+", 0, "+parse(linkedId)+", "+parse(tin)+")");
+				stmt.executeQuery("INSERT INTO Account VALUES ("+parse(id)+", 'POCKET', 'CSIL', "+parse(tin)+", 0, "+parse(linkedId)+", "+initialTopUp+")");
 				System.out.println("Inserted to Account");
 			} catch(Exception e) {
 				System.out.println("Couldn't add to Account");
@@ -599,7 +599,69 @@ public class App implements Testable
 	@Override
 	public String createCustomer( String accountId, String tin, String name, String address )
 	{
-				return "r";
+		try {
+			Statement stmt = _connection.createStatement();
+			try {
+				ResultSet rs = stmt.executeQuery("SELECT taxID FROM Customer WHERE taxID = "+parse(tin));
+				if(rs.next()) {
+					System.out.println("Customer exists already");
+					return "1";
+				}
+				rs.close();
+			} catch(Exception e) {
+				System.out.println("Couldn't select from Customer");
+				System.out.println(e);
+				return "1";
+			}
+
+			try {
+				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'Pocket'");
+				if (rs.next()){
+					System.out.println("account type invalid");
+					return "1";
+				}
+				rs.close();
+			} catch(Exception e){
+				System.out.println("Couldn't select from account for type");
+				System.out.println(e);
+				return "1";
+			}
+
+			try {
+				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId));
+				if(!rs.next()) {
+					System.out.println("Account doesn't exist");
+					return "1";
+				}
+				rs.close();
+			} catch(Exception e){
+				System.out.println("Couldn't select from account for exist");
+				System.out.println(e);
+				return "1";
+			}
+
+			try {
+				stmt.executeQuery("INSERT INTO Customer VALUES ("+parse(name)+", "+parse(tin)+", "+parse(address)+", 1717)");
+			} catch(Exception e) {
+				System.out.println("Couldn't insert to Customer");
+				System.out.println(e);
+			}
+
+			try {
+				stmt.executeQuery("INSERT INTO Owns VALUES ("+parse(tin)+", "+parse(accountId)+")");
+			} catch(Exception e){
+				System.out.println("Couldn't insert to Owns");
+				System.out.println(e);
+				return "1";
+			}
+
+		} catch(Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+			return "1";
+		}
+
+		return "0";
 	}
 
 	/**
@@ -614,7 +676,64 @@ public class App implements Testable
 	@Override
 	public String deposit( String accountId, double amount )
 	{
-		return "r";
+		double oldBal = 0.0;
+		double newBal = 0.0;
+		
+		if (checkClosed(accountId)) {
+			System.out.println("account is closed");
+			return "1";
+		}
+		try {
+			Statement stmt = _connection.createStatement();
+
+			try {
+				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'Pocket'");
+				if (rs.next()){
+					System.out.println("account type invalid");
+					return "1";
+				}
+				rs.close();
+			} catch(Exception e){
+				System.out.println("Couldn't select from account for type");
+				System.out.println(e);
+				return "1";
+			}
+
+			try {
+				ResultSet rs = stmt.executeQuery("SELECT balance FROM Account WHERE a_id = "+parse(accountId));
+				if (rs.next()){
+					oldBal = rs.getDouble("balance");
+					newBal = oldBal + amount;
+				}
+				rs.close();
+			} catch(Exception e) {
+				System.out.println("Couldn't select balance");
+				System.out.println(e);
+				return "1";
+			}
+
+			try {
+				ResultSet rs = stmt.executeQuery("UPDATE Account SET balance = balance + "+amount+" WHERE a_id= "+parse(accountId));
+				if(rs.next()){
+					try {
+						stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', NULL, "+parse(accountId)+")");
+					} catch(Exception e) {
+						System.out.println("Couldn't add to Transactions");
+						System.out.println(e);
+						return "1 ";
+					}
+
+				}
+			} catch (Exception e) {
+				System.out.println("Couldn't update Account");
+				System.out.println(e);
+				return "1";
+			}
+		} catch (Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+		}
+		return "0 " +oldBal+" "+newBal;
 	}
 
 	/**
@@ -638,15 +757,14 @@ public class App implements Testable
 
 			String sql = "SELECT a_id, balance, isClosed " +
 					"FROM Account " +
-					"WHERE a_id = " + accountId + " ";
+					"WHERE a_id = " + parse(accountId);
 			ResultSet r = stmt.executeQuery(sql);
-			System.out.println(r);
 			if (!r.next())
 				return "1";
 			else if (r.getInt("isClosed") == 1)
 				return "0 0.00";
 			else
-				return "0 " + r.getString("Balance");
+				return "0 " + r.getString("balance");
 		}catch (Exception e) {
 			System.out.println("Failed select a_id");
 			System.out.println(e);
@@ -801,4 +919,41 @@ public class App implements Testable
     	return sb.toString();
   	}
 
+	public boolean checkClosed(String a_id) {
+		try {
+			Statement stmt = _connection.createStatement();
+
+			try {
+				ResultSet rs = stmt.executeQuery("SELECT isClosed FROM Account WHERE a_id = "+parse(a_id));
+				if (rs.next()){
+					int closed = rs.getInt("isClosed");
+					return closed > 0;
+				}
+				rs.close();
+			} catch (Exception e) {
+				System.out.println("Couldn't select closed");
+				System.out.println(e);
+			}
+		} catch (Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+			return false;
+		}
+		return false;
+	}
+
+	public void closeAccountBalanceCheck(String a_id) {
+		try {
+			Statement stmt = _connection.createStatement();
+			try {
+				stmt.executeQuery("UPDATE Account SET isClosed = 1 WHERE balance <= 0.01 AND a_id="+parse(a_id));
+			} catch (Exception e) {
+				System.out.println("Couldn't update");
+			}
+		} catch(Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+		}
+
+	}
 }

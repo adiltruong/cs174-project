@@ -41,7 +41,16 @@ public class Main
 			r = app.createPocketAccount( "account2", "account1", 30.0, "theTaxID");
 			System.out.println( r );
 
-			r = app.showBalance("12121");
+			r = app.createCustomer("account1", "taxID", "George", "Joe Mama");
+			System.out.println( r );
+
+			r = app.showBalance("account1");
+			System.out.println("BALANCE for r:" + r);
+
+			r = app.deposit("account1", 200.00);
+			System.out.println( r );
+
+			r = app.showBalance("account1");
 			System.out.println("BALANCE for r:" + r);
 		}
 	}
