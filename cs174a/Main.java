@@ -41,6 +41,15 @@ public class Main
 			r = app.createPocketAccount( "account2", "account1", 30.0, "theTaxID");
 			System.out.println( r );
 
+			r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "account3", 1234.56, "someID", "oof", "haha" );
+			System.out.println( r );
+
+			r = app.createPocketAccount( "account4", "account3", 50.0, "someID");
+			System.out.println( r );
+
+			r = app.payFriend("account4", "account2", 20.0);
+			System.out.println( r );
+			
 			r = app.createCustomer("account1", "taxID", "George", "Joe Mama");
 			System.out.println( r );
 
@@ -52,6 +61,12 @@ public class Main
 
 			r = app.showBalance("account1");
 			System.out.println("BALANCE for r:" + r);
+
+			r = app.topUp("account2", 300.00);
+			System.out.println( r );
+
+			r = app.showBalance("account2");
+			System.out.println( r );
 		}
 	}
 	//!### FINALIZAMOS

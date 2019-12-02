@@ -786,7 +786,68 @@ public class App implements Testable
 	{
 		//basic functionality: check account won't close, accounts exist, $5 fee to linked account
 		//pocketBalance, linkedBalance after, deny if make balance < 0 or close if balance < 0.0
-		return "r";
+		if (checkClosed(accountId)){
+			return "1";
+		}
+		double linkedNewBalance = 0.0;
+		double pocketNewBalance = 0.0;
+		double l_amount = amount;
+		String linkedId = "";
+		try {
+			Statement stmt = _connection.createStatement();
+
+			try {
+				if (isFirstTransactionOfMonth(accountId)) {
+					l_amount = amount+5;
+				}
+				ResultSet rs = stmt.executeQuery("SELECT * FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
+				if (rs.next()) {
+					linkedId = rs.getString("linked_id");
+					if (balTooLow(linkedId, l_amount)){
+						System.out.println("Bal Too Low");
+						return "1";
+					}
+					stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(accountId));
+					stmt.executeQuery("UPDATE Account SET balance = balance -"+l_amount+" WHERE a_id = "+parse(linkedId));
+					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'top-up', '"+generateRandomChars(9)+"', "+parse(linkedId)+", "+parse(accountId)+")");
+					closeAccountBalanceCheck(accountId);
+				}
+			} catch(Exception e) {
+				System.out.println("Couldn't execute operations");
+				System.out.println(e);
+				return "1";
+			}
+
+			try {
+				ResultSet rs = stmt.executeQuery("SELECT balance FROM Account WHERE a_id = "+parse(accountId));
+				if (rs.next()){
+					pocketNewBalance = rs.getDouble("balance");
+				}
+				rs.close();
+			} catch(Exception e) {
+				System.out.println("Couldn't select balance");
+				System.out.println(e);
+				return "1";
+			}
+
+			try {
+				ResultSet rs = stmt.executeQuery("SELECT balance FROM Account WHERE a_id = "+parse(linkedId));
+				if (rs.next()){
+					linkedNewBalance = rs.getDouble("balance");
+				}
+				rs.close();
+			} catch(Exception e) {
+				System.out.println("Couldn't select balance");
+				System.out.println(e);
+				return "1";
+			}
+
+		} catch(Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+			return "1";
+		}
+		return "0 "+ linkedNewBalance + " " + pocketNewBalance;
 	}
 
 	/**
@@ -807,7 +868,40 @@ public class App implements Testable
 		//check if both friends have a valid balance
 		//from balance = balance - amount
 		//to balance = balance + amount
-		return "r";
+
+		if(checkClosed(from)){
+			System.out.println("From is closed");
+			return "1";
+		}
+    	if(checkClosed(to)){
+			System.out.println("To is closed");
+			return "1";
+		}
+
+      	try{
+			Statement stmt = _connection.createStatement();
+        	ResultSet rs = stmt.executeQuery("SELECT * FROM Account A1, Account A2 WHERE A1.a_id = "+parse(from)+" AND A1.a_type= 'POCKET' AND "+"A2.a_id= "+parse(to)+" AND A2.a_type= 'POCKET'");
+        	if(rs.next()) {
+          		if(balTooLow(from, amount)){
+            		return "1";
+          		}
+          		stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(to));
+				stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(from));
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'pay-friend', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+")");
+          		if(isFirstTransactionOfMonth(from)){
+            		stmt.executeQuery("UPDATE Account SET balance = balance-5 WHERE a_id= "+parse(from));
+          		}
+          		if(isFirstTransactionOfMonth(to)){
+            		stmt.executeQuery("UPDATE Account SET balance = balance-5 WHERE a_id= "+parse(to));
+          		}
+        	}
+        	closeAccountBalanceCheck(from);
+        	closeAccountBalanceCheck(to);
+      	}catch(Exception e){
+			System.out.println(e);
+        	return "1";
+      	}
+		return "0";
 	}
 
 	public static String parse(String s){
@@ -956,4 +1050,36 @@ public class App implements Testable
 		}
 
 	}
+
+	public boolean balTooLow(String a_id, double amount) {
+		double bal = 0.0;
+		try(Statement stmt = _connection.createStatement()){
+
+			String sql = "SELECT balance " +
+					"FROM Account " +
+					"WHERE a_id = " + parse(a_id);
+			ResultSet r = stmt.executeQuery(sql);
+			if (r.next()) {
+				bal = r.getDouble("balance");
+			}
+		} catch(Exception e) {
+			System.out.println("Couldn't select balance");
+			return false;
+		}
+		return amount > bal;
+	}
+
+	public boolean isFirstTransactionOfMonth(String a_id){
+    	try{
+			Statement stmt = _connection.createStatement();
+      		ResultSet rs = stmt.executeQuery("SELECT * FROM Transaction T WHERE (T.rec_id = "+parse(a_id)+" OR T.send_id = "+parse(a_id)+") AND extract(month FROM T.t_date) = (select MAX(extract(month FROM C.globalDate)) FROM globalDate C)");
+      		if(rs.next()){
+        		return false;
+      		}
+    	} catch(Exception e){
+			System.out.println(e);
+    	}
+    	return true;
+  }
+
 }
