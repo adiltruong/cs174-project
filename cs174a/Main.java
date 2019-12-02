@@ -26,6 +26,7 @@ public class Main
 		if( r.equals( "0" ) )
 		{
 			//app.exampleAccessToDB();                // Example on how to connect to the DB.
+
 			r = app.setDate(2011,3,1);
 			System.out.println(r);
 
@@ -35,6 +36,9 @@ public class Main
 
 			// Another example test.
 			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "account1", 1234.56, "theTaxID", "Im YoungMing", "Known" );
+			System.out.println( r );
+
+			r = app.createPocketAccount( "account2", "account1", 30.0, "theTaxID");
 			System.out.println( r );
 
 			r = app.showBalance("12121");

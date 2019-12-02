@@ -12,6 +12,7 @@ import oracle.jdbc.OracleConnection;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.*;
 
 /**
  * The most important class for your application.
@@ -168,8 +169,8 @@ public class App implements Testable
     										"PRIMARY KEY (a_id), " +
     										"FOREIGN KEY (primaryOwner) REFERENCES Customer(taxID) ON DELETE CASCADE, " +
     										"FOREIGN KEY (linked_id) REFERENCES Account(a_id) ON DELETE CASCADE, " +
-    										"CONSTRAINT CHK_Balance CHECK (balance > 0.0), " +
-    										"CONSTRAINT CHK_Link CHECK ((a_type = 'Pocket' AND linked_id IS NOT NULL) OR (a_type != 'Pocket' AND linked_id IS NULL)))"; 
+    										"CONSTRAINT CHK_Balance CHECK (balance >= 0.01), " +
+    										"CONSTRAINT CHK_Link CHECK ((a_type = 'POCKET' AND linked_id IS NOT NULL) OR (a_type != 'POCKET' AND linked_id IS NULL)))"; 
     			statement.executeUpdate(sql);
     		} catch (Exception e) {
     			System.out.println("Failed making table Account");
@@ -180,7 +181,7 @@ public class App implements Testable
     		try {
     			System.out.println("Creating table Owns");
     			String sql = "CREATE TABLE Owns (" +
-    										"taxID CHAR(9), " +
+    										"taxID CHAR(10), " +
     										"a_id CHAR(10), " +
     										"PRIMARY KEY (taxID, a_id), " +
     										"FOREIGN KEY (taxID) REFERENCES Customer ON DELETE CASCADE, " +
@@ -334,19 +335,19 @@ public class App implements Testable
 	}
 
 	public String getDate(){
-    try{
-      ResultSet rs = database.execute_query("select timestamp from CurrentDate");
-      if(rs.next()){
-        String date = rs.getString("timestamp");
-        System.out.println(date);
-        return date;
-      }
-    }
-    catch(SQLException e){
-      e.printStackTrace();
-    }
-    return null;
-  }
+    	try{
+    		Statement stmt = _connection.createStatement();
+      		ResultSet rs = stmt.executeQuery("SELECT globalDate FROM GlobalDate");
+      		if(rs.next()){
+        		String date = rs.getString("globalDate");
+        		System.out.println(date);
+        		return date;
+      		}
+    	} catch(SQLException e){
+      		e.printStackTrace();
+    	}
+    	return null;
+  	}
 	
 	/**
 	 * Example of one of the testable functions.
@@ -412,53 +413,179 @@ public class App implements Testable
 			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 		}
 
-		/*if (accountType != AccountType.STUDENT_CHECKING || accountType != AccountType.INTEREST_CHECKING || accountType != AccountType.SAVINGS ) {
+		if (accountType == AccountType.POCKET ) {
 			System.out.println("Invalid Type");
 			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
-		}*/
+		}
 
 		try {
 			Statement stmt = _connection.createStatement();
+			try { //check if acc exists
+				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Owns WHERE a_id = "+parse(id));
+				if (rs.next()) {
+					System.out.println("Account exists");
+					return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+				}
+				rs.close();
+			} catch(Exception e) {
+				System.out.println(e);
+				return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+			}
+		} catch(Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+		}
 
-			ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+id);
-			if (rs.next()) {
-				System.out.println("Account exists");
+		try {
+			Statement stmt = _connection.createStatement();
+			try {
+
+				ResultSet ress = stmt.executeQuery("SELECT taxID FROM Customer WHERE taxID = "+parse(tin));
+			
+				if (ress.next()== false) {
+					System.out.println("Customer does not exist");
+					try {
+						if(name == null || address == null) {
+							System.out.println("No values to create customer");
+							return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+						}
+						stmt.executeQuery("INSERT INTO Customer VALUES ("+parse(name)+", "+parse(tin)+", "+parse(address)+", 1717)");
+					} catch(Exception e) {
+						System.out.println("Couldn't connect to Customer");
+						System.out.println(e);
+						return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+					}
+
+				}
+
+				try {
+					stmt.executeQuery("INSERT INTO Account VALUES ('"+accountType+"', "+initialBalance+", 'CSIL', "+parse(id)+", 0, NULL, "+parse(tin)+")");
+					System.out.println("Account linked to Customer");
+				} catch(Exception e) {
+					System.out.println("Couldn't add to Account");
+					System.out.println(e);
+					return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+				}
+
+				try {
+					stmt.executeQuery("INSERT INTO Owns VALUES ( "+parse(tin)+", "+parse(id)+")");
+				} catch(Exception e) {
+					System.out.println("Couldn't add to Owns");
+					System.out.println(e);
+					return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+				}
+
+				try {
+					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialBalance+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', NULL, NULL)");
+				} catch(Exception e) {
+					System.out.println("Couldn't add to Transactions");
+					System.out.println(e);
+					return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+				}
+
+			} catch (Exception e) {
+				System.out.println("Couldn't perform operations");
+				System.out.println(e);
 				return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 			}
 
-			ResultSet ress = stmt.executeQuery("SELECT taxID FROM Customer WHERE taxID = "+tin);
-			
-			if (!ress.next()) {
-				System.out.println("Customer does not exist");
-				if(name.isEmpty() || address.isEmpty()) {
-					System.out.println("No values to create customer");
-					return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
-				}
-				createCustomer(id, tin, name, address);
-				System.out.println("Customer created and account linked");
-				return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
-			}
-
-			else if (ress.next()) {
-				System.out.println("Customer exists");
-				stmt.executeQuery("INSERT INTO Account VALUES (" +accountType+ ", " + initialBalance + ", CSIL, "+id+", 0, NULL, "+tin+")");
-				stmt.executeQuery("INSERT INTO Owns VALUES (" +id+ ", " + tin + ")");
-				return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
-
-			}
-
-		} catch(Exception e){
-			System.out.println();
+		} catch(Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
 			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
-
 		}
-		return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+
+		return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
 	}
 
 	@Override
 	public String createPocketAccount( String id, String linkedId, double initialTopUp, String tin )
 	{
-		return "r";
+		boolean linkedIdExists = false;
+		int closed = 0;
+		double linkedBalance = 0.0;
+		String acctype = "";
+		String tid = "";
+		try { //check if pocket account exists
+			Statement stmt = _connection.createStatement();
+			try { //check if acc exists
+				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Owns WHERE a_id = "+parse(id));
+				if (rs.next()) {
+					System.out.println("Account exists");
+					return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
+				}
+				rs.close();
+			} catch(Exception e) {
+				System.out.println(e);
+				return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
+			}
+		} catch(Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+			return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
+		}
+
+		try { //check if linked account exists
+			Statement stmt = _connection.createStatement();
+			try { //check if acc exists
+				ResultSet rs = stmt.executeQuery("SELECT * FROM Account WHERE a_id = "+parse(linkedId));
+				if (rs.next()) {
+					System.out.println("linkedAccount exists");
+					linkedIdExists = true;
+					closed = rs.getInt("isClosed");
+					linkedBalance = rs.getDouble("balance");
+					acctype = rs.getString("a_type");
+				}
+				rs.close();
+			} catch(Exception e) {
+
+				System.out.println(e);
+				return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
+			}
+
+			if (linkedIdExists == false || closed == 1 || linkedBalance - initialTopUp <= 0.01 || acctype == "POCKET") {
+				return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
+			}
+
+			try {
+				stmt.executeQuery("UPDATE Account SET balance = "+ (linkedBalance-initialTopUp)+" WHERE a_id  = "+parse(linkedId));
+			} catch(Exception e) {
+				System.out.println("Failed to update account");
+				return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
+			}
+
+			try {
+				stmt.executeQuery("INSERT INTO Account VALUES ('POCKET', "+initialTopUp+", 'CSIL', "+parse(id)+", 0, "+parse(linkedId)+", "+parse(tin)+")");
+				System.out.println("Inserted to Account");
+			} catch(Exception e) {
+				System.out.println("Couldn't add to Account");
+				System.out.println(e);
+				return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
+			}
+
+			try {
+				stmt.executeQuery("INSERT INTO Owns VALUES ( "+parse(tin)+", "+parse(id)+")");
+			} catch(Exception e) {
+				System.out.println("Couldn't add to Owns");
+				System.out.println(e);
+				return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
+			}
+
+			try {
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialTopUp+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'TOPUP', '"+generateRandomChars(9)+"', "+parse(linkedId)+", "+parse(id)+")");
+			} catch(Exception e) {
+				System.out.println("Couldn't add to Transactions");
+				System.out.println(e);
+				return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
+			}
+
+		} catch(Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+			return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
+		}
+		return "0 " + id + " POCKET " + initialTopUp+ " " + tin;
 	}
 
 	/**
@@ -472,13 +599,7 @@ public class App implements Testable
 	@Override
 	public String createCustomer( String accountId, String tin, String name, String address )
 	{
-		try {
-			Statement stmt = _connection.createStatement();
-			try {
-				System.out.print
-			}
-		}
-		return "r";
+				return "r";
 	}
 
 	/**
@@ -513,8 +634,24 @@ public class App implements Testable
 		//check if id exists, if not return "1";
 		//check if isClosed = 1, if yes, return "0 0.00"
 		//return "0"+ Double.toString();
+		try(Statement stmt = _connection.createStatement()){
 
-		return "r";
+			String sql = "SELECT a_id, balance, isClosed " +
+					"FROM Account " +
+					"WHERE a_id = " + accountId + " ";
+			ResultSet r = stmt.executeQuery(sql);
+			System.out.println(r);
+			if (!r.next())
+				return "1";
+			else if (r.getInt("isClosed") == 1)
+				return "0 0.00";
+			else
+				return "0 " + r.getString("Balance");
+		}catch (Exception e) {
+			System.out.println("Failed select a_id");
+			System.out.println(e);
+			return "1";
+		}
 	}
 
 	/**
