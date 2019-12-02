@@ -332,6 +332,21 @@ public class App implements Testable
 
 		return "0 " + s;
 	}
+
+	public String getDate(){
+    try{
+      ResultSet rs = database.execute_query("select timestamp from CurrentDate");
+      if(rs.next()){
+        String date = rs.getString("timestamp");
+        System.out.println(date);
+        return date;
+      }
+    }
+    catch(SQLException e){
+      e.printStackTrace();
+    }
+    return null;
+  }
 	
 	/**
 	 * Example of one of the testable functions.
@@ -426,14 +441,14 @@ public class App implements Testable
 
 			else if (ress.next()) {
 				System.out.println("Customer exists");
-				stmt.executeQuery("INSERT INTO Account VALUES ( hello, " + initialBalance + ", CSIL, "+id+", 0, NULL, "+tin+")");
+				stmt.executeQuery("INSERT INTO Account VALUES (" +accountType+ ", " + initialBalance + ", CSIL, "+id+", 0, NULL, "+tin+")");
 				stmt.executeQuery("INSERT INTO Owns VALUES (" +id+ ", " + tin + ")");
 				return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
 
 			}
 
 		} catch(Exception e){
-			System.out.println(e);
+			System.out.println();
 			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 
 		}
@@ -457,6 +472,12 @@ public class App implements Testable
 	@Override
 	public String createCustomer( String accountId, String tin, String name, String address )
 	{
+		try {
+			Statement stmt = _connection.createStatement();
+			try {
+				System.out.print
+			}
+		}
 		return "r";
 	}
 
@@ -492,25 +513,8 @@ public class App implements Testable
 		//check if id exists, if not return "1";
 		//check if isClosed = 1, if yes, return "0 0.00"
 		//return "0"+ Double.toString();
-		try(Statement stmt = _connection.createStatement()){
 
-			String sql = "SELECT a_id, balance, isClosed " +
-					"FROM Account " +
-					"WHERE a_id = " + accountId + " ";
-			ResultSet r = stmt.executeQuery(sql);
-			System.out.println(r);
-			if (!r.next())
-				return "1";
-			else if (r.getInt("isClosed") == 1)
-				return "0 0.00";
-			else
-				return "0 " + r.getString("Balance");
-		}catch (Exception e) {
-			System.out.println("Failed select a_id");
-			System.out.println(e);
-			return "1";
-		}
-
+		return "r";
 	}
 
 	/**
@@ -649,5 +653,15 @@ public class App implements Testable
 		}
 	}
 
+	public static String generateRandomChars(int length) {
+    	String candidateChars  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    	StringBuilder sb = new StringBuilder();
+    	Random random = new Random();
+    	for (int i = 0; i < length; i++) {
+        	sb.append(candidateChars.charAt(random.nextInt(candidateChars.length())));
+    	}
+
+    	return sb.toString();
+  	}
 
 }
