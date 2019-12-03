@@ -23,6 +23,7 @@ public class Main
 	{
 		App app = new App();                        // We need the default constructor of your App implementation.  Make sure such
 													// constructor exists.
+		//ATM atm = new ATM();
 		String r = app.initializeSystem();          // We'll always call this function before testing your system.
 		if( r.equals( "0" ) )
 		{
@@ -51,9 +52,11 @@ public class Main
 			r = app.createPocketAccount( "account4", "account3", 50.0, "someID");
 			System.out.println( r );
 
+			System.out.println("payFriend: ");
 			r = app.payFriend("account4", "account2", 20.0);
 			System.out.println( r );
 
+			System.out.println("createCustomer: ");
 			r = app.createCustomer("account1", "taxID", "George", "Joe Mama");
 			System.out.println( r );
 
@@ -72,6 +75,30 @@ public class Main
 			r = app.showBalance("account2");
 			System.out.println( r );
 
+			r = app.withdraw("account1", 300.0);
+			System.out.println(r);
+
+			r = app.showBalance("account1");
+			System.out.println( r );
+
+			r = app.purchase("account2", 3.0);
+			System.out.println(r);
+
+			r = app.showBalance("account2");
+			System.out.println( r );
+
+			r = app.collect("account2", 30.00);
+			System.out.println( r );
+
+			r = app.showBalance("account2");
+			System.out.println( r );
+
+			r = app.showBalance("account1");
+			System.out.println( r );
+
+
+			
+
 		boolean systemOn = true;
 		Scanner myObj = new Scanner(System.in);
 
@@ -83,23 +110,48 @@ public class Main
 			System.out.println("1  Bank teller");
 			System.out.println("2 Set system date");
 			System.out.println("3 Leave bank of debt");
-
+			int loginTries = 0;
 			int option = myObj.nextInt();
 
 			if (option == 0) {
 				System.out.println();
 				System.out.println("Booting up ATM...");
 				System.out.println();
+				boolean rr = false;
 				boolean atmON = true;
-				System.out.println();
-				System.out.println("Welcome to Debts R Us ATM");
-				System.out.println("Please log in...");
-				System.out.println();
-					
+				while (loginTries < 3 && !rr) {
+					System.out.println();
+					System.out.println("Welcome to Debts R Us ATM");
+					System.out.println("Please log in...");
+					System.out.println();
+					String name = myObj.nextLine();
+					String pin = myObj.nextLine();
+					rr = app.login(name, pin);
+					loginTries++;
+					if(!rr)
+						System.out.println("big oof you goofed");
 				}
-			}
+			System.out.println("ATM Inferface Options");
+			System.out.println("");
+			System.out.println("0: Deposit");
+			System.out.println("1: Top-Up");
+			System.out.println("2: Withdrawal");
+			System.out.println("3: Purchase");
+			System.out.println("4: Transfer");
+			System.out.println("5: Collect");
+			System.out.println("6: Wire");
+			System.out.println("7: Pay-Friend");
+			int input = myObj.nextInt();
+			//if(input = )
+
+					
+			//}
 
 			if (option == 1) {
+				System.out.println();
+				System.out.println("");
+
+
 				
 			}
 			if (option == 2) {
@@ -127,9 +179,9 @@ public class Main
 				systemOn = false;
 			}
 
+			}
 		}
-
-	}
+		}
 	//!### FINALIZAMOS
 }
 }

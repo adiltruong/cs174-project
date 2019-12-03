@@ -53,7 +53,19 @@ public class App implements Testable
 
 	////////////////////////////// Implement all of the methods given in the interface /////////////////////////////////
 	// Check the Testable.java interface for the function signatures and descriptions.
-
+	public boolean login(String name, String pin){
+        try{
+            Statement stmt = _connection.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM Customer WHERE name = '"+name+"' AND pin = '"+pin+"')");
+            if (rs.next()) {
+                String currentUser = rs.getString("taxID");
+                return true;
+            }
+        }catch(Exception e){
+            System.out.println("big oof: "+e);
+        }
+        return false;
+    }
 	@Override
 	public String initializeSystem()
 	{
@@ -338,16 +350,19 @@ public class App implements Testable
 	public String getDate(){
     	try{
     		Statement stmt = _connection.createStatement();
-      		ResultSet rs = stmt.executeQuery("SELECT globalDate FROM GlobalDate");
-      		if(rs.next()){
-        		String date = rs.getString("globalDate");
+      		ResultSet rs = stmt.executeQuery("SELECT MAX(globalDate) AS \"Recent Date\" FROM GlobalDate");
+      		
+			if(rs.next()) {
+				String date = rs.getString("Recent Date");
         		System.out.println(date);
+				rs.close();
         		return date;
-      		}
-    	} catch(SQLException e){
-      		e.printStackTrace();
+			}
+			
+    	} catch(Exception e){
+      		System.out.println(e);
     	}
-    	return null;
+    	return "";
   	}
 	
 	public String setInterestRate(AccountType accountType, double rate)
@@ -816,7 +831,7 @@ public class App implements Testable
 
 			try {
 				if (isFirstTransactionOfMonth(accountId)) {
-					l_amount = amount+5;
+					l_amount = amount-5;
 				}
 				ResultSet rs = stmt.executeQuery("SELECT * FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
 				if (rs.next()) {
@@ -825,8 +840,8 @@ public class App implements Testable
 						System.out.println("Bal Too Low");
 						return "1";
 					}
-					stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(accountId));
-					stmt.executeQuery("UPDATE Account SET balance = balance -"+l_amount+" WHERE a_id = "+parse(linkedId));
+					stmt.executeQuery("UPDATE Account SET balance = balance +"+l_amount+" WHERE a_id = "+parse(accountId));
+					stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(linkedId));
 					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'top-up', '"+generateRandomChars(9)+"', "+parse(linkedId)+", "+parse(accountId)+")");
 					closeAccountBalanceCheck(accountId);
 				}
@@ -1124,11 +1139,78 @@ public class App implements Testable
     	return true;
   	}
 
+	//check if accountType is not POCKET
+	//balance Too Low, cant use
+	//
+
 	public String withdraw(String accountId, double amount){
+		try {
+			Statement stmt = _connection.createStatement();
+
+			try {
+				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'Pocket'");
+				if (rs.next()){
+					System.out.println("account type invalid");
+					return "1";
+				}
+				rs.close();
+			} catch(Exception e){
+				System.out.println("Couldn't select from account for type");
+				System.out.println(e);
+				return "1";
+			}
+
+			try {
+    			ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId));
+    			if (rs.next()){
+        			if(balTooLow(accountId, amount)){
+            		return "1";
+        			}
+        		stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
+        		stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'withdraw', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL)");
+    			}
+    			closeAccountBalanceCheck(accountId);
+			} catch(Exception e) {
+    			System.out.println(e);
+    			return "1";
+			}
+
+		} catch (Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+			return "1";
+		}
+
 		return "0";
 	}
 
 	public String purchase(String accountId, double amount) {
+		try {
+			Statement stmt = _connection.createStatement();
+
+			try {
+    			ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
+    			if (rs.next()){
+					if (isFirstTransactionOfMonth(accountId)) {
+						amount = amount+5;
+					}
+        			if(balTooLow(accountId, amount)){
+            			return "1";
+        			}
+        			stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
+        			stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'withdraw', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL)");
+    				closeAccountBalanceCheck(accountId);
+				}
+			} catch(Exception e) {
+    			System.out.println(e);
+    			return "1";
+			}
+
+		} catch (Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+			return "1";
+		}
 		return "0";
 	}
 
@@ -1136,8 +1218,46 @@ public class App implements Testable
 		return "0";
 	}
 
-	public String collect(String accountId, String linkedId, double amount) {
-		return "0";
+	public String collect(String accountId, double amount) {
+		if (checkClosed(accountId)){
+			return "1";
+		}
+		double linkedNewBalance = 0.0;
+		double pocketNewBalance = 0.0;
+		double p_amount = amount - 0.03*amount;
+		double l_amount = amount - 0.03*amount;
+		String linkedId = "";
+		try {
+			Statement stmt = _connection.createStatement();
+
+			try {
+				if (isFirstTransactionOfMonth(accountId)) {
+					p_amount = amount-5;
+				}
+				ResultSet rs = stmt.executeQuery("SELECT * FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
+				if (rs.next()) {
+					linkedId = rs.getString("linked_id");
+					if (balTooLow(linkedId, amount)){
+						System.out.println("Bal Too Low");
+						return "1";
+					}
+					stmt.executeQuery("UPDATE Account SET balance = balance -"+p_amount+" WHERE a_id = "+parse(accountId));
+					stmt.executeQuery("UPDATE Account SET balance = balance +"+l_amount+" WHERE a_id = "+parse(linkedId));
+					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+l_amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'collect', '"+generateRandomChars(9)+"', "+parse(accountId)+", "+parse(linkedId)+")");
+					closeAccountBalanceCheck(linkedId);
+				}
+			} catch(Exception e) {
+				System.out.println("Couldn't execute operations");
+				System.out.println(e);
+				return "1";
+			}
+
+		} catch(Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+			return "1";
+		}
+		return "0 ";
 	}
 	//3%fee
 
@@ -1156,4 +1276,5 @@ public class App implements Testable
 	}
 
 	//FOR ATM, deposit, top-up, withdrawal, purchase, transfer, collect, wire, pay-friend
+	//FOR Bank
 }
