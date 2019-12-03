@@ -1124,4 +1124,36 @@ public class App implements Testable
     	return true;
   	}
 
+	public String withdraw(String accountId, double amount){
+		return "0";
+	}
+
+	public String purchase(String accountId, double amount) {
+		return "0";
+	}
+
+	public String transfer(String from, String to, double amount){
+		return "0";
+	}
+
+	public String collect(String accountId, String linkedId, double amount) {
+		return "0";
+	}
+	//3%fee
+
+	public String wire(String from, String to, double amount) {
+		return "0";
+	}
+	//Customer must be owner of both
+	//2% fee
+
+	public String writeCheck(String accountId, double amount) {
+		return "0";
+	}
+
+	public String accrueInterest(String accountId) {
+		return "0";
+	}
+
+	//FOR ATM, deposit, top-up, withdrawal, purchase, transfer, collect, wire, pay-friend
 }

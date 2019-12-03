@@ -2,6 +2,7 @@ package cs174a;                         // THE BASE PACKAGE FOR YOUR APP MUST BE
 
 // DO NOT REMOVE THIS IMPORT.
 import cs174a.Testable.*;
+import java.util.Scanner;
 
 /**
  * This is the class that launches your application.
@@ -70,7 +71,65 @@ public class Main
 
 			r = app.showBalance("account2");
 			System.out.println( r );
+
+		boolean systemOn = true;
+		Scanner myObj = new Scanner(System.in);
+
+		while(systemOn) {
+			System.out.println();
+			System.out.println("Welcome to Debts R Us! What would you like to do today?");
+			System.out.println();
+			System.out.println("0  ATM interface");
+			System.out.println("1  Bank teller");
+			System.out.println("2 Set system date");
+			System.out.println("3 Leave bank of debt");
+
+			int option = myObj.nextInt();
+
+			if (option == 0) {
+				System.out.println();
+				System.out.println("Booting up ATM...");
+				System.out.println();
+				boolean atmON = true;
+				System.out.println();
+				System.out.println("Welcome to Debts R Us ATM");
+				System.out.println("Please log in...");
+				System.out.println();
+					
+				}
+			}
+
+			if (option == 1) {
+				
+			}
+			if (option == 2) {
+				System.out.println();
+				System.out.println("What date would you like to set the system to?");
+				System.out.println("Year? YYYY");
+
+				int year = myObj.nextInt();
+
+				System.out.println("Month?");
+				int month = myObj.nextInt();
+
+				System.out.println("Day?");
+				int day = myObj.nextInt();
+
+				r = app.setDate(year, month, day);
+
+				System.out.println("Date set!");
+				System.out.println(app.getDate());
+				System.out.println();
+			}
+
+			if (option == 3) {
+				System.out.println("Goodbye...");
+				systemOn = false;
+			}
+
 		}
+
 	}
 	//!### FINALIZAMOS
+}
 }
