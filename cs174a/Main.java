@@ -41,6 +41,9 @@ public class Main
 			r = app.createPocketAccount( "account2", "account1", 30.0, "theTaxID");
 			System.out.println( r );
 
+			r = app.setInterestRate( AccountType.INTEREST_CHECKING, 3.5);
+			System.out.println(r);
+
 			r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "account3", 1234.56, "someID", "oof", "haha" );
 			System.out.println( r );
 
@@ -49,7 +52,7 @@ public class Main
 
 			r = app.payFriend("account4", "account2", 20.0);
 			System.out.println( r );
-			
+
 			r = app.createCustomer("account1", "taxID", "George", "Joe Mama");
 			System.out.println( r );
 

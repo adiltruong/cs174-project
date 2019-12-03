@@ -95,6 +95,7 @@ public class App implements Testable
 		createTables();
 		//populate_customers("cs174a/inputs/customers.csv");
 		//populate_accounts("cs174a/inputs/accounts.csv");
+		populate_interest("cs174a/inputs/interest.csv");
 		return "0";
 	}
 
@@ -349,6 +350,23 @@ public class App implements Testable
     	return null;
   	}
 	
+	public String setInterestRate(AccountType accountType, double rate)
+	{
+		if (accountType == AccountType.POCKET || accountType == AccountType.STUDENT_CHECKING) {
+			System.out.println("Can't switch interest rate by type");
+			return "Type issue";
+		}
+
+		try {
+			Statement stmt = _connection.createStatement();
+			stmt.executeQuery("UPDATE Interest SET int_rate = "+rate+" WHERE type = '"+accountType+"' ");
+		} catch(Exception e) {
+			System.out.println("Couldn't update interest");
+			System.out.println(e);
+			return "1";
+		}
+		return "0";
+	}
 	/**
 	 * Example of one of the testable functions.
 	 */
@@ -1002,6 +1020,30 @@ public class App implements Testable
 		}
 	}
 
+	void populate_interest(String filename){
+		String line="";
+		try (Statement stmt = _connection.createStatement()) {
+    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+      			while ((line = br.readLine()) != null) {
+        			String[] columns = line.split(",");
+
+        			String a_type = parse(columns[0]);
+        			String rate = columns[1];
+
+        			String query = "INSERT INTO Interest VALUES ("+
+          			a_type+", " + rate + ")";
+
+        			stmt.executeQuery(query);
+
+      			}
+    		} catch (IOException e) {
+      			e.printStackTrace();
+    		}
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+	}
+
 	public static String generateRandomChars(int length) {
     	String candidateChars  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     	StringBuilder sb = new StringBuilder();
@@ -1080,6 +1122,6 @@ public class App implements Testable
 			System.out.println(e);
     	}
     	return true;
-  }
+  	}
 
 }
