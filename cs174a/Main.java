@@ -41,6 +41,7 @@ public class Main
 			System.out.println( r );
 
 			Transactions transactions = new Transactions(app.getConnection());
+			BankTeller bankTeller = new BankTeller(app.getConnection());
 
 			r = app.createPocketAccount( "account2", "account1", 30.0, "theTaxID");
 			System.out.println( r );
@@ -72,6 +73,9 @@ public class Main
 			System.out.println("BALANCE for 1:" + r);
 
 			r = transactions.writeCheck("account5", 20.0);
+			System.out.println( r );
+
+			r = bankTeller.checkTransaction("account5", 20.0);
 			System.out.println( r );
 
 			r = app.showBalance("account5");
