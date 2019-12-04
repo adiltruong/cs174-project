@@ -51,25 +51,15 @@ public class App implements Testable
 		}
 	}
 
-	////////////////////////////// Implement all of the methods given in the interface /////////////////////////////////
-	// Check the Testable.java interface for the function signatures and descriptions.
-	public boolean login(String taxID, String pin){
-        try{
-            Statement stmt = _connection.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM Customer WHERE taxID = '"+taxID+"' AND pin = '"+pin+"'");
-            if (rs.next()) {
-                String currentUser = rs.getString("taxID");
-                return true;
-            }
-        }catch(Exception e){
-            System.out.println("big oof: "+e);
-        }
-        return false;
-    }
-
 	public OracleConnection getConnection(){
 		return _connection;
 	}
+
+	////////////////////////////// Implement all of the methods given in the interface /////////////////////////////////
+	// Check the Testable.java interface for the function signatures and descriptions.
+
+
+	//Testable functions below
 
 	@Override
 	public String initializeSystem()
@@ -108,11 +98,6 @@ public class App implements Testable
 			return "1";
 		}
 
-		dropTables();
-		createTables();
-		//populate_customers("cs174a/inputs/customers.csv");
-		//populate_accounts("cs174a/inputs/accounts.csv");
-		populate_interest("cs174a/inputs/interest.csv");
 		return "0";
 	}
 
@@ -353,44 +338,10 @@ public class App implements Testable
 		return "0 " + s;
 	}
 
-	public String getDate(){
-    	try{
-    		Statement stmt = _connection.createStatement();
-      		ResultSet rs = stmt.executeQuery("SELECT MAX(globalDate) AS \"Recent Date\" FROM GlobalDate");
-      		
-			if(rs.next()) {
-				String date = rs.getString("Recent Date");
-        		System.out.println(date);
-				rs.close();
-        		return date;
-			}
-			
-    	} catch(Exception e){
-      		System.out.println(e);
-    	}
-    	return "";
-  	}
-	
-	public String setInterestRate(AccountType accountType, double rate)
-	{
-		if (accountType == AccountType.POCKET || accountType == AccountType.STUDENT_CHECKING) {
-			System.out.println("Can't switch interest rate by type");
-			return "Type issue";
-		}
-
-		try {
-			Statement stmt = _connection.createStatement();
-			stmt.executeQuery("UPDATE Interest SET int_rate = "+rate+" WHERE type = '"+accountType+"' ");
-		} catch(Exception e) {
-			System.out.println("Couldn't update interest");
-			System.out.println(e);
-			return "1";
-		}
-		return "0";
-	}
 	/**
 	 * Example of one of the testable functions.
 	 */
+
 	@Override
 	public String listClosedAccounts()
 	{
@@ -457,9 +408,9 @@ public class App implements Testable
 			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 		}
 
-		try {
+		try { //check if account already exists
 			Statement stmt = _connection.createStatement();
-			try { //check if acc exists
+			try { 
 				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Owns WHERE a_id = "+parse(id));
 				if (rs.next()) {
 					System.out.println("Account exists");
@@ -470,16 +421,8 @@ public class App implements Testable
 				System.out.println(e);
 				return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 			}
-		} catch(Exception e) {
-			System.out.println("Couldn't connect to DB");
-			System.out.println(e);
-			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
-		}
 
-		try {
-			Statement stmt = _connection.createStatement();
 			try {
-
 				ResultSet ress = stmt.executeQuery("SELECT taxID FROM Customer WHERE taxID = "+parse(tin));
 			
 				if (ress.next()== false) {
@@ -495,9 +438,7 @@ public class App implements Testable
 						System.out.println(e);
 						return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 					}
-
 				}
-
 				try {
 					stmt.executeQuery("INSERT INTO Account VALUES ("+parse(id)+", '"+accountType+"', 'CSIL', "+parse(tin)+", 0, NULL, "+initialBalance+")");
 					System.out.println("Account linked to Customer");
@@ -528,7 +469,6 @@ public class App implements Testable
 				System.out.println(e);
 				return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 			}
-
 		} catch(Exception e) {
 			System.out.println("Couldn't connect to DB");
 			System.out.println(e);
@@ -546,7 +486,7 @@ public class App implements Testable
 		double linkedBalance = 0.0;
 		String acctype = "";
 		String tid = "";
-		try { //check if pocket account exists
+		try { //check if POCKET account exists
 			Statement stmt = _connection.createStatement();
 			try { //check if acc exists
 				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Owns WHERE a_id = "+parse(id));
@@ -559,14 +499,7 @@ public class App implements Testable
 				System.out.println(e);
 				return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
 			}
-		} catch(Exception e) {
-			System.out.println("Couldn't connect to DB");
-			System.out.println(e);
-			return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
-		}
 
-		try { //check if linked account exists
-			Statement stmt = _connection.createStatement();
 			try { //check if acc exists
 				ResultSet rs = stmt.executeQuery("SELECT * FROM Account WHERE a_id = "+parse(linkedId));
 				if (rs.next()) {
@@ -618,12 +551,12 @@ public class App implements Testable
 				System.out.println(e);
 				return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
 			}
-
 		} catch(Exception e) {
 			System.out.println("Couldn't connect to DB");
 			System.out.println(e);
 			return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
 		}
+
 		return "0 " + id + " POCKET " + initialTopUp+ " " + tin;
 	}
 
@@ -654,7 +587,7 @@ public class App implements Testable
 			}
 
 			try {
-				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'Pocket'");
+				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
 				if (rs.next()){
 					System.out.println("account type invalid");
 					return "1";
@@ -726,7 +659,7 @@ public class App implements Testable
 			Statement stmt = _connection.createStatement();
 
 			try {
-				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'Pocket'");
+				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
 				if (rs.next()){
 					System.out.println("account type invalid");
 					return "1";
@@ -789,9 +722,6 @@ public class App implements Testable
 	@Override
 	public String showBalance( String accountId )
 	{
-		//check if id exists, if not return "1";
-		//check if isClosed = 1, if yes, return "0 0.00"
-		//return "0"+ Double.toString();
 		try(Statement stmt = _connection.createStatement()){
 
 			String sql = "SELECT a_id, balance, isClosed " +
@@ -812,19 +742,19 @@ public class App implements Testable
 	}
 
 	/**
-	 * Move a specified amount of money from the linked checking/savings account to the pocket account.
-	 * @param accountId Pocket account ID.
+	 * Move a specified amount of money from the linked checking/savings account to the POCKET account.
+	 * @param accountId POCKET account ID.
 	 * @param amount Non-negative amount to top up.
-	 * @return a string "r linkedNewBalance pocketNewBalance", where
+	 * @return a string "r linkedNewBalance POCKETNewBalance", where
 	 *         r = 0 for success, 1 for error;
 	 *         linkedNewBalance is the new balance of linked account, with up to 2 decimal places (e.g. with %.2f); and
-	 *         pocketNewBalance is the new balance of the pocket account.
+	 *         POCKETNewBalance is the new balance of the POCKET account.
 	 */
 	@Override
 	public String topUp( String accountId, double amount )
 	{
 		//basic functionality: check account won't close, accounts exist, $5 fee to linked account
-		//pocketBalance, linkedBalance after, deny if make balance < 0 or close if balance < 0.0
+		//POCKETBalance, linkedBalance after, deny if make balance < 0 or close if balance < 0.0
 		if (checkClosed(accountId)){
 			return "1";
 		}
@@ -890,20 +820,20 @@ public class App implements Testable
 	}
 
 	/**
-	 * Move a specified amount of money from one pocket account to another pocket account.
-	 * @param from Source pocket account ID.
-	 * @param to Destination pocket account ID.
+	 * Move a specified amount of money from one POCKET account to another POCKET account.
+	 * @param from Source POCKET account ID.
+	 * @param to Destination POCKET account ID.
 	 * @param amount Non-negative amount to pay.
 	 * @return a string "r fromNewBalance toNewBalance", where
 	 *         r = 0 for success, 1 for error.
-	 *         fromNewBalance is the new balance of the source pocket account, with up to 2 decimal places (e.g. with %.2f); and
-	 *         toNewBalance is the new balance of destination pocket account, with up to 2 decimal places.
+	 *         fromNewBalance is the new balance of the source POCKET account, with up to 2 decimal places (e.g. with %.2f); and
+	 *         toNewBalance is the new balance of destination POCKET account, with up to 2 decimal places.
 	 */
 
 	@Override
 	public String payFriend( String from, String to, double amount )
 	{
-		//check if both friends have a pocket account
+		//check if both friends have a POCKET account
 		//check if both friends have a valid balance
 		//from balance = balance - amount
 		//to balance = balance + amount
@@ -943,218 +873,16 @@ public class App implements Testable
 		return "0";
 	}
 
-	public static String parse(String s){
-    	return "'" + s.replace("'", "''") + "'";
-  	}
-
-  	public static String parseNULL(String s){
-    	if(s ==null || s.isEmpty()){
-      		return "NULL";
-    	}
-    	else{
-      		return parse(s);
-    	}
-  	}
-
-	void populate_customers(String filename){
-
-    	String line="";
-    	try (Statement stmt = _connection.createStatement()) {
-    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-      			while ((line = br.readLine()) != null) {
-        			String[] columns = line.split(",");
-
-        			String name = parse(columns[0]);
-        			String taxID = parse(columns[1]);
-        			String address = parse(columns[2]);
-        			String pin = parse(columns[3]);
-
-        			String query = "INSERT INTO Customer (name, taxID, address, pin) values ("+
-          			name+", " + taxID + ", " + address + ", " + pin + ")";
-
-        			stmt.executeQuery(query);
-
-      			}
-    		}
-    		catch (IOException e) {
-      			e.printStackTrace();
-    		}
-    	}
-    	catch (Exception e) {
-    		System.out.println("Couldn't connect to database");
-    		System.out.println(e);
-    	}
-  	}
-  	
-
-  	void populate_accounts(String filename){
-    	String line="";
-    	try (Statement stmt = _connection.createStatement()) {
-    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-      			while ((line = br.readLine()) != null) {
-        			String[] columns = line.split(",");
-
-        			String id = parse(columns[0]);
-        			String type = parse(columns[1]);
-        			String branch = parse(columns[2]);
-        			String primary_owner = parse(columns[3]);
-        			String linked_id = parseNULL(columns[4]);
-        			String balance = parse(columns[5]);
-
-        			String query = "INSERT INTO Account (a_id, a_type, bank_branch, PrimaryOwner,  isClosed, linked_id, balance ) values ("+
-            			id+", " + type + ", " + branch + ", " + primary_owner + ", 0, " + linked_id +", "+balance+")";
+	//END OF TESTABLE HERE
 
 
-        			stmt.executeQuery(query);
-
-      			}
-    		} catch (IOException e) {
-      			e.printStackTrace();
-    		}
-  		} catch (Exception e) {
-  			System.out.println("Couldn't connect to database");
-  			System.out.println(e);
-  		}
-	}
-
-	void populate_owns(String filename){
-		String line="";
-		try (Statement stmt = _connection.createStatement()) {
-    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-      			while ((line = br.readLine()) != null) {
-        			String[] columns = line.split(",");
-
-        			String tax_id = parse(columns[0]);
-        			String aid = parse(columns[1]);
-
-        			String query = "insert into Owns (taxID, a_id) values ("+
-          			tax_id+", " + aid + ")";
-
-        			stmt.executeQuery(query);
-
-      			}
-    		} catch (IOException e) {
-      			e.printStackTrace();
-    		}
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-	}
-
-	void populate_interest(String filename){
-		String line="";
-		try (Statement stmt = _connection.createStatement()) {
-    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-      			while ((line = br.readLine()) != null) {
-        			String[] columns = line.split(",");
-
-        			String a_type = parse(columns[0]);
-        			String rate = columns[1];
-
-        			String query = "INSERT INTO Interest VALUES ("+
-          			a_type+", " + rate + ")";
-
-        			stmt.executeQuery(query);
-
-      			}
-    		} catch (IOException e) {
-      			e.printStackTrace();
-    		}
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-	}
-
-	public static String generateRandomChars(int length) {
-    	String candidateChars  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    	StringBuilder sb = new StringBuilder();
-    	Random random = new Random();
-    	for (int i = 0; i < length; i++) {
-        	sb.append(candidateChars.charAt(random.nextInt(candidateChars.length())));
-    	}
-
-    	return sb.toString();
-  	}
-
-	public boolean checkClosed(String a_id) {
-		try {
-			Statement stmt = _connection.createStatement();
-
-			try {
-				ResultSet rs = stmt.executeQuery("SELECT isClosed FROM Account WHERE a_id = "+parse(a_id));
-				if (rs.next()){
-					int closed = rs.getInt("isClosed");
-					return closed > 0;
-				}
-				rs.close();
-			} catch (Exception e) {
-				System.out.println("Couldn't select closed");
-				System.out.println(e);
-			}
-		} catch (Exception e) {
-			System.out.println("Couldn't connect to DB");
-			System.out.println(e);
-			return false;
-		}
-		return false;
-	}
-
-	public void closeAccountBalanceCheck(String a_id) {
-		try {
-			Statement stmt = _connection.createStatement();
-			try {
-				stmt.executeQuery("UPDATE Account SET isClosed = 1 WHERE balance <= 0.01 AND a_id="+parse(a_id));
-			} catch (Exception e) {
-				System.out.println("Couldn't update");
-			}
-		} catch(Exception e) {
-			System.out.println("Couldn't connect to DB");
-			System.out.println(e);
-		}
-
-	}
-
-	public boolean balTooLow(String a_id, double amount) {
-		double bal = 0.0;
-		try(Statement stmt = _connection.createStatement()){
-
-			String sql = "SELECT balance " +
-					"FROM Account " +
-					"WHERE a_id = " + parse(a_id);
-			ResultSet r = stmt.executeQuery(sql);
-			if (r.next()) {
-				bal = r.getDouble("balance");
-			}
-		} catch(Exception e) {
-			System.out.println("Couldn't select balance");
-			return false;
-		}
-		return amount > bal;
-	}
-
-	public boolean isFirstTransactionOfMonth(String a_id){
-    	try{
-			Statement stmt = _connection.createStatement();
-      		ResultSet rs = stmt.executeQuery("SELECT * FROM Transaction T WHERE (T.rec_id = "+parse(a_id)+" OR T.send_id = "+parse(a_id)+") AND extract(month FROM T.t_date) = (select MAX(extract(month FROM C.globalDate)) FROM globalDate C)");
-      		if(rs.next()){
-        		return false;
-      		}
-    	} catch(Exception e){
-			System.out.println(e);
-    	}
-    	return true;
-  	}
-
-	//check if accountType is not POCKET
-	//balance Too Low, cant use
-	//
-
+	//BEGIN ATM Functions
 	public String withdraw(String accountId, double amount){
 		try {
 			Statement stmt = _connection.createStatement();
 
 			try {
-				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'Pocket'");
+				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
 				if (rs.next()){
 					System.out.println("account type invalid");
 					return "1";
@@ -1269,7 +997,7 @@ public class App implements Testable
 			return "1";
 		}
 		double linkedNewBalance = 0.0;
-		double pocketNewBalance = 0.0;
+		double POCKETNewBalance = 0.0;
 		double p_amount = amount + 0.03*amount;
 		String linkedId = "";
 		try {
@@ -1329,7 +1057,7 @@ public class App implements Testable
 				System.out.println("jhaghah");
           		stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(to));
 				stmt.executeQuery("UPDATE Account SET balance = balance -"+fee_amount+" WHERE a_id = "+parse(from));
-				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'wire', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+", NULL)");
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'transfer', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+", NULL)");
 			}
         	closeAccountBalanceCheck(from);
         	closeAccountBalanceCheck(to);
@@ -1347,7 +1075,7 @@ public class App implements Testable
 		try {
 			Statement stmt = _connection.createStatement();
 			try {
-					ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND (a_type = 'Pocket' OR a_type = 'SAVINGS')");
+					ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND (a_type = 'POCKET' OR a_type = 'SAVINGS')");
 					if (rs.next()){
 						System.out.println("account type invalid");
 						return "1";
@@ -1363,7 +1091,7 @@ public class App implements Testable
 			if (rs.next()){
 				if(balTooLow(accountId, amount)){
 					return "1";
-				4}
+				}
 			stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
 			stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'write_check', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL, "+ generateRandomChars(20) +")");
 			closeAccountBalanceCheck(accountId);
@@ -1379,6 +1107,321 @@ public class App implements Testable
 		
 		return "0";
 	}
+	public static String parse(String s){
+    	return "'" + s.replace("'", "''") + "'";
+  	}
+
+  	public static String parseNULL(String s){
+    	if(s ==null || s.isEmpty()){
+      		return "NULL";
+    	}
+    	else{
+      		return parse(s);
+    	}
+  	}
+
+  	//populate functions
+
+  	public void populate_tables(){
+
+  		populate_customers("cs174a/inputs/customers.csv");
+    	populate_accounts("cs174a/inputs/accounts.csv");
+    	populate_owns("cs174a/inputs/owns.csv");
+    	populate_transactions("cs174a/inputs/transactions.csv");
+    	populate_interest("cs174a/inputs/interest.csv");
+    	populate_date();
+    // 	populate_interest_paid();
+  	}
+
+	public void populate_customers(String filename){
+
+    	String line="";
+    	try (Statement stmt = _connection.createStatement()) {
+    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+      			while ((line = br.readLine()) != null) {
+        			String[] columns = line.split(",");
+
+        			String name = parse(columns[0]);
+        			String taxID = parse(columns[1]);
+        			String address = parse(columns[2]);
+        			String pin = parse(columns[3]);
+
+        			String query = "INSERT INTO Customer (name, taxID, address, pin) values ("+
+          			name+", " + taxID + ", " + address + ", " + pin + ")";
+
+        			stmt.executeQuery(query);
+
+      			}
+    		}
+    		catch (Exception e) {
+      			System.out.println(e);
+    		}
+    	}
+    	catch (Exception e) {
+    		System.out.println("Couldn't connect to database");
+    		System.out.println(e);
+    	}
+  	}
+  	
+  	public void populate_accounts(String filename){
+    	String line="";
+    	try (Statement stmt = _connection.createStatement()) {
+    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+      			while ((line = br.readLine()) != null) {
+        			String[] columns = line.split(",");
+
+        			String id = parse(columns[0]);
+        			String type = parse(columns[1]);
+        			String branch = parse(columns[2]);
+        			String primary_owner = parse(columns[3]);
+        			String linked_id = parseNULL(columns[4]);
+        			String balance = parse(columns[5]);
+
+        			String query = "INSERT INTO Account (a_id, a_type, bank_branch, PrimaryOwner, isClosed, linked_id, balance ) values ("+
+            			id+", " + type + ", " + branch + ", " + primary_owner + ", 0, " + linked_id +", "+balance+")";
+
+
+        			stmt.executeQuery(query);
+
+      			}
+    		} catch (Exception e) {
+      			System.out.println(e);
+    		}
+  		} catch (Exception e) {
+  			System.out.println("Couldn't connect to database");
+  			System.out.println(e);
+  		}
+	}
+
+	public void populate_owns(String filename){
+		String line="";
+		try (Statement stmt = _connection.createStatement()) {
+    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+      			while ((line = br.readLine()) != null) {
+        			String[] columns = line.split(",");
+
+        			String tax_id = parse(columns[0]);
+        			String aid = parse(columns[1]);
+
+        			String query = "INSERT INTO Owns (taxID, a_id) VALUES ("+
+          			tax_id+", " + aid + ")";
+
+        			stmt.executeQuery(query);
+
+      			}
+    		} catch (Exception e) {
+      			System.out.println(e);
+    		}
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+	}
+
+	public void populate_transactions(String filename){
+	    String line="";
+	    try (Statement stmt = _connection.createStatement()) {
+		    try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+		      while ((line = br.readLine()) != null) {
+		        String[] columns = line.split(",");
+
+		        String t_id =parse(columns[0]);
+		        String amount = columns[1];
+		        String type = parse(columns[2]);
+		        String date = "TO_DATE(" + parse(columns[3]) + ", 'MM-DD-YYYY')";
+		        System.out.println(date);
+		        String check_no = parseNULL(columns[4]);
+		        String send_id = parseNULL(columns[5]);
+		        String rec_id;
+		        if(columns.length < 7){
+		          rec_id = "NULL";
+		        }
+		        else{
+		          rec_id = parseNULL(columns[6]);
+		        }
+
+		        String query = "INSERT INTO Transaction (amount, t_date, type, t_id, rec_id, send_id, check_no) VALUES("+
+		          amount+", " + date+", " + type+", " + t_id+", " + rec_id+", " + send_id+", "+check_no+")";
+		        stmt.executeQuery(query);
+		      }
+	    	} catch (Exception e) {
+	      		System.out.println(e);
+	    	}
+	    } catch (Exception e) {
+	      		System.out.println(e);
+	    }
+  	}
+
+	public void populate_interest(String filename){
+		String line="";
+		try {
+			Statement stmt = _connection.createStatement();
+    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+      			while ((line = br.readLine()) != null) {
+        			String[] columns = line.split(",");
+
+        			String a_type = parse(columns[0]);
+        			String rate = columns[1];
+
+        			String query = "INSERT INTO Interest VALUES ("+
+          			a_type+", " + rate + ")";
+
+        			stmt.executeQuery(query);
+
+      			}
+    		} catch (Exception e) {
+      			System.out.println(e);
+    		}
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+	}
+
+	public void populate_date() {
+		setDate(2011, 3, 2);
+		setDate(2011, 3, 3);
+		setDate(2011, 3, 5);
+		setDate(2011, 3, 6);
+		setDate(2011, 3, 7);
+		setDate(2011, 3, 8);
+		setDate(2011, 3, 10);
+		setDate(2011, 3, 12);
+		setDate(2011, 3, 14);
+	}
+
+
+  	public String getDate(){
+    	try{
+    		Statement stmt = _connection.createStatement();
+      		ResultSet rs = stmt.executeQuery("SELECT MAX(globalDate) AS \"Recent Date\" FROM GlobalDate");
+      		
+			if(rs.next()) {
+				String date = rs.getString("Recent Date");
+        		System.out.println(date);
+				rs.close();
+        		return date;
+			}
+			
+    	} catch(Exception e){
+      		System.out.println(e);
+    	}
+    	return "";
+  	}
+	
+	public String setInterestRate(AccountType accountType, double rate)
+	{
+		if (accountType == AccountType.POCKET || accountType == AccountType.STUDENT_CHECKING) {
+			System.out.println("Can't switch interest rate by type");
+			return "Type issue";
+		}
+
+		try {
+			Statement stmt = _connection.createStatement();
+			stmt.executeQuery("UPDATE Interest SET int_rate = "+rate+" WHERE type = '"+accountType+"' ");
+		} catch(Exception e) {
+			System.out.println("Couldn't update interest");
+			System.out.println(e);
+			return "1";
+		}
+		return "0";
+	}
+
+	public static String generateRandomChars(int length) {
+    	String candidateChars  = "1234567890";
+    	StringBuilder sb = new StringBuilder();
+    	Random random = new Random();
+    	for (int i = 0; i < length; i++) {
+        	sb.append(candidateChars.charAt(random.nextInt(candidateChars.length())));
+    	}
+
+    	return sb.toString();
+  	}
+
+  	public boolean login(String taxID, String pin){
+        try{
+            Statement stmt = _connection.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM Customer WHERE taxID = '"+taxID+"' AND pin = '"+pin+"'");
+            if (rs.next()) {
+                String currentUser = rs.getString("taxID");
+                return true;
+            }
+        }catch(Exception e){
+            System.out.println("big oof: "+e);
+        }
+        return false;
+    }
+
+	public boolean checkClosed(String a_id) {
+		try {
+			Statement stmt = _connection.createStatement();
+
+			try {
+				ResultSet rs = stmt.executeQuery("SELECT isClosed FROM Account WHERE a_id = "+parse(a_id));
+				if (rs.next()){
+					int closed = rs.getInt("isClosed");
+					return closed > 0;
+				}
+				rs.close();
+			} catch (Exception e) {
+				System.out.println("Couldn't select closed");
+				System.out.println(e);
+			}
+		} catch (Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+			return false;
+		}
+		return false;
+	}
+
+	public void closeAccountBalanceCheck(String a_id) {
+		try {
+			Statement stmt = _connection.createStatement();
+			try {
+				stmt.executeQuery("UPDATE Account SET isClosed = 1 WHERE balance <= 0.01 AND a_id="+parse(a_id));
+			} catch (Exception e) {
+				System.out.println("Couldn't update");
+			}
+		} catch(Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+		}
+
+	}
+
+	public boolean balTooLow(String a_id, double amount) {
+		double bal = 0.0;
+		try(Statement stmt = _connection.createStatement()){
+
+			String sql = "SELECT balance " +
+					"FROM Account " +
+					"WHERE a_id = " + parse(a_id);
+			ResultSet r = stmt.executeQuery(sql);
+			if (r.next()) {
+				bal = r.getDouble("balance");
+			}
+		} catch(Exception e) {
+			System.out.println("Couldn't select balance");
+			return false;
+		}
+		return amount > bal;
+	}
+
+	public boolean isFirstTransactionOfMonth(String a_id){
+    	try{
+			Statement stmt = _connection.createStatement();
+      		ResultSet rs = stmt.executeQuery("SELECT * FROM Transaction T WHERE (T.rec_id = "+parse(a_id)+" OR T.send_id = "+parse(a_id)+") AND extract(month FROM T.t_date) = (select MAX(extract(month FROM C.globalDate)) FROM globalDate C)");
+      		if(rs.next()){
+        		return false;
+      		}
+    	} catch(Exception e){
+			System.out.println(e);
+    	}
+    	return true;
+  	}
+
+	//check if accountType is not POCKET
+	//balance Too Low, cant use
+	//
 
 	public String addInterest() {
 		// try{
