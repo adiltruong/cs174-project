@@ -1126,10 +1126,10 @@ public class App implements Testable
 
   		populate_customers("cs174a/inputs/customers.csv");
     	populate_accounts("cs174a/inputs/accounts.csv");
-    	// populate_owns("res/owns.csv");
-    	// populate_transactions("res/transactions.csv");
+    	populate_owns("cs174a/inputs/owns.csv");
+    	populate_transactions("cs174a/inputs/transactions.csv");
     	populate_interest("cs174a/inputs/interest.csv");
-    // 	populate_date("2018-12-3");
+    	populate_date();
     // 	populate_interest_paid();
   	}
 
@@ -1227,7 +1227,8 @@ public class App implements Testable
 		        String t_id =parse(columns[0]);
 		        String amount = columns[1];
 		        String type = parse(columns[2]);
-		        String date = "TO_DATE(" + parse(columns[3]) + ", 'YYYY-MM-DD')";
+		        String date = "TO_DATE(" + parse(columns[3]) + ", 'MM-DD-YYYY')";
+		        System.out.println(date);
 		        String check_no = parseNULL(columns[4]);
 		        String send_id = parseNULL(columns[5]);
 		        String rec_id;
@@ -1238,7 +1239,7 @@ public class App implements Testable
 		          rec_id = parseNULL(columns[6]);
 		        }
 
-		        String query = "INSERT INTO Transaction (amount, t_date, type, t_id, check_no, paying_id, receiving_id) values("+
+		        String query = "INSERT INTO Transaction (amount, t_date, type, t_id, rec_id, send_id, check_no) VALUES("+
 		          amount+", " + date+", " + type+", " + t_id+", " + rec_id+", " + send_id+", "+check_no+")";
 		        stmt.executeQuery(query);
 		      }
@@ -1273,6 +1274,18 @@ public class App implements Testable
 		} catch (Exception e) {
 			System.out.println(e);
 		}
+	}
+
+	public void populate_date() {
+		setDate(2011, 3, 2);
+		setDate(2011, 3, 3);
+		setDate(2011, 3, 5);
+		setDate(2011, 3, 6);
+		setDate(2011, 3, 7);
+		setDate(2011, 3, 8);
+		setDate(2011, 3, 10);
+		setDate(2011, 3, 12);
+		setDate(2011, 3, 14);
 	}
 
 
