@@ -28,7 +28,9 @@ public class Main
 		if( r.equals( "0" ) )
 		{
 			//app.exampleAccessToDB();                // Example on how to connect to the DB.
-
+			app.dropTables();
+			app.createTables();
+			app.populate_tables();
 			r = app.setDate(2011,3,1);
 			System.out.println(r);
 
@@ -295,7 +297,9 @@ public class Main
 				// }
 
 			if (option == 4) {
+				System.out.println();
 				System.out.println("Goodbye...");
+				System.out.println();
 				systemOn = false;
 			}
 

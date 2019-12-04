@@ -98,11 +98,6 @@ public class App implements Testable
 			return "1";
 		}
 
-		dropTables();
-		createTables();
-		//populate_customers("cs174a/inputs/customers.csv");
-		//populate_accounts("cs174a/inputs/accounts.csv");
-		populate_interest("cs174a/inputs/interest.csv");
 		return "0";
 	}
 
@@ -880,6 +875,7 @@ public class App implements Testable
 
 	//END OF TESTABLE HERE
 
+
 	//BEGIN ATM Functions
 	public String withdraw(String accountId, double amount){
 		try {
@@ -1125,7 +1121,19 @@ public class App implements Testable
   	}
 
   	//populate functions
-	void populate_customers(String filename){
+
+  	public void populate_tables(){
+
+  		populate_customers("cs174a/inputs/customers.csv");
+    	populate_accounts("cs174a/inputs/accounts.csv");
+    	// populate_owns("res/owns.csv");
+    	// populate_transactions("res/transactions.csv");
+    	populate_interest("cs174a/inputs/interest.csv");
+    // 	populate_date("2018-12-3");
+    // 	populate_interest_paid();
+  	}
+
+	public void populate_customers(String filename){
 
     	String line="";
     	try (Statement stmt = _connection.createStatement()) {
@@ -1145,8 +1153,8 @@ public class App implements Testable
 
       			}
     		}
-    		catch (IOException e) {
-      			e.printStackTrace();
+    		catch (Exception e) {
+      			System.out.println(e);
     		}
     	}
     	catch (Exception e) {
@@ -1155,7 +1163,7 @@ public class App implements Testable
     	}
   	}
   	
-  	void populate_accounts(String filename){
+  	public void populate_accounts(String filename){
     	String line="";
     	try (Statement stmt = _connection.createStatement()) {
     		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
@@ -1169,15 +1177,15 @@ public class App implements Testable
         			String linked_id = parseNULL(columns[4]);
         			String balance = parse(columns[5]);
 
-        			String query = "INSERT INTO Account (a_id, a_type, bank_branch, PrimaryOwner,  isClosed, linked_id, balance ) values ("+
+        			String query = "INSERT INTO Account (a_id, a_type, bank_branch, PrimaryOwner, isClosed, linked_id, balance ) values ("+
             			id+", " + type + ", " + branch + ", " + primary_owner + ", 0, " + linked_id +", "+balance+")";
 
 
         			stmt.executeQuery(query);
 
       			}
-    		} catch (IOException e) {
-      			e.printStackTrace();
+    		} catch (Exception e) {
+      			System.out.println(e);
     		}
   		} catch (Exception e) {
   			System.out.println("Couldn't connect to database");
@@ -1185,7 +1193,7 @@ public class App implements Testable
   		}
 	}
 
-	void populate_owns(String filename){
+	public void populate_owns(String filename){
 		String line="";
 		try (Statement stmt = _connection.createStatement()) {
     		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
@@ -1195,23 +1203,57 @@ public class App implements Testable
         			String tax_id = parse(columns[0]);
         			String aid = parse(columns[1]);
 
-        			String query = "insert into Owns (taxID, a_id) values ("+
+        			String query = "INSERT INTO Owns (taxID, a_id) VALUES ("+
           			tax_id+", " + aid + ")";
 
         			stmt.executeQuery(query);
 
       			}
-    		} catch (IOException e) {
-      			e.printStackTrace();
+    		} catch (Exception e) {
+      			System.out.println(e);
     		}
 		} catch (Exception e) {
 			System.out.println(e);
 		}
 	}
 
-	void populate_interest(String filename){
+	public void populate_transactions(String filename){
+	    String line="";
+	    try (Statement stmt = _connection.createStatement()) {
+		    try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+		      while ((line = br.readLine()) != null) {
+		        String[] columns = line.split(",");
+
+		        String t_id =parse(columns[0]);
+		        String amount = columns[1];
+		        String type = parse(columns[2]);
+		        String date = "TO_DATE(" + parse(columns[3]) + ", 'YYYY-MM-DD')";
+		        String check_no = parseNULL(columns[4]);
+		        String send_id = parseNULL(columns[5]);
+		        String rec_id;
+		        if(columns.length < 7){
+		          rec_id = "NULL";
+		        }
+		        else{
+		          rec_id = parseNULL(columns[6]);
+		        }
+
+		        String query = "INSERT INTO Transaction (amount, t_date, type, t_id, check_no, paying_id, receiving_id) values("+
+		          amount+", " + date+", " + type+", " + t_id+", " + rec_id+", " + send_id+", "+check_no+")";
+		        stmt.executeQuery(query);
+		      }
+	    	} catch (Exception e) {
+	      		System.out.println(e);
+	    	}
+	    } catch (Exception e) {
+	      		System.out.println(e);
+	    }
+  	}
+
+	public void populate_interest(String filename){
 		String line="";
-		try (Statement stmt = _connection.createStatement()) {
+		try {
+			Statement stmt = _connection.createStatement();
     		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
       			while ((line = br.readLine()) != null) {
         			String[] columns = line.split(",");
@@ -1225,8 +1267,8 @@ public class App implements Testable
         			stmt.executeQuery(query);
 
       			}
-    		} catch (IOException e) {
-      			e.printStackTrace();
+    		} catch (Exception e) {
+      			System.out.println(e);
     		}
 		} catch (Exception e) {
 			System.out.println(e);
@@ -1271,7 +1313,7 @@ public class App implements Testable
 	}
 
 	public static String generateRandomChars(int length) {
-    	String candidateChars  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    	String candidateChars  = "1234567890";
     	StringBuilder sb = new StringBuilder();
     	Random random = new Random();
     	for (int i = 0; i < length; i++) {
