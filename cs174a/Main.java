@@ -69,7 +69,7 @@ public class Main
 			r = app.showBalance("account1");
 			System.out.println("BALANCE for 1:" + r);
 
-			r = app.wire("account3", "account5", 20.0);
+			r = app.writeCheck("account5", 20.0);
 			System.out.println( r );
 
 			r = app.showBalance("account5");

@@ -7,12 +7,10 @@
 
 // public class BankTeller{
 //     private OracleConnection _connection;
-//     App app;
 //     Statement stmt;
 //     ResultSet rs;
-//     public BankTeller(/*OracleConnection _connection, */App app){//constructor
-//         //this._connection = _connection;
-//         this.app = app;
+//     public BankTeller(OracleConnection _connection){//constructor
+//         this._connection = _connection;
 //     }
 //     //main functions
 //     public String checkTransaction(String accountID, double amount){
@@ -37,10 +35,6 @@
 //             System.out.println(e);
 //             return "1";
 //         }
-
-
-
-
 //         if (statement == "")
 //             statement += "No accounts found for " + taxID;
 //         return "0\n" + statement;
