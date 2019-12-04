@@ -28,7 +28,9 @@ public class Main
 		if( r.equals( "0" ) )
 		{
 			//app.exampleAccessToDB();                // Example on how to connect to the DB.
-
+			app.dropTables();
+			app.createTables();
+			app.populate_tables();
 			r = app.setDate(2011,3,1);
 			System.out.println(r);
 
@@ -109,7 +111,9 @@ public class Main
 			int option = myObj.nextInt();
 			String taxID = "";
 			String pin = "";
-			if (option == 0) {
+
+
+			if (option == 0) { //ATM Interface
 				System.out.println();
 				System.out.println("Booting up ATM...");
 				System.out.println();
@@ -166,6 +170,12 @@ public class Main
 
 						}
 
+						if (input == 1) {
+
+						}
+
+
+
 						if (input == 8) {
 							System.out.println();
 							System.out.println("Verify PIN first:");
@@ -180,10 +190,6 @@ public class Main
 							}else{
 								System.out.println("Invalid PIN...\nReturning to ATM menu...\n");
 							}
-
-
-
-
 						}
 
 						if (input == 9) {
@@ -202,12 +208,14 @@ public class Main
 				}
 			}
 
-			if (option == 1) {
+			if (option == 1) { //Bank Teller Interface
 				System.out.println("Hello, I am the Bank Teller");
 				System.out.println("Tell me what you'd like me to do for you!");
 
 				System.out.println();
 				System.out.println();
+
+
 
 
 // "Write Check","Monthly Statement","List Closed Accounts",
@@ -243,7 +251,41 @@ public class Main
 				System.out.println("Which account type would you like to change the Interest rate for?");
 				System.out.println();
 
-				int day = myObj.nextInt();
+				System.out.println("1 Interest-Checking");
+				System.out.println("2 Savings");
+
+				int acc = myObj.nextInt();
+
+				if(acc == 1) {
+					System.out.println();
+					System.out.println("What rate would like to set it as? (Enter double)");
+					System.out.println();
+					double rate = myObj.nextDouble();
+					r = app.setInterestRate(AccountType.INTEREST_CHECKING, rate);
+					if (r == "0") {
+						System.out.println("SUCCESS Interest-Checking rate changed to "+rate);
+					}
+					else {
+						System.out.println("Invalid rate. Returning to Main Menu");
+					}
+				}
+
+				else if(acc == 2) {
+					System.out.println();
+					System.out.println("What rate would like to set it as? (Enter double)");
+					System.out.println();
+					double rate = myObj.nextDouble();
+					r = app.setInterestRate(AccountType.SAVINGS, rate);
+					if (r == "0") {
+						System.out.println("SUCCESS Savings rate changed to "+rate);
+					} else {
+						System.out.println("Invalid rate. Returning to Main Menu");
+					}
+				}
+
+				else {
+					System.out.println("Invalid option. Returning to Main Menu");
+				}
 			}
 
 				//String input = myObj.nextLine();
@@ -261,7 +303,9 @@ public class Main
 				// }
 
 			if (option == 4) {
+				System.out.println();
 				System.out.println("Goodbye...");
+				System.out.println();
 				systemOn = false;
 			}
 
