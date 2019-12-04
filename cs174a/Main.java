@@ -60,41 +60,29 @@ public class Main
 			r = app.createCustomer("account1", "taxID", "George", "Joe Mama");
 			System.out.println( r );
 
+			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "account5", 1234.56, "taxID", "Im YoungMing", "Known" );
+			System.out.println( r );
+
+			r = app.showBalance("account5");
+			System.out.println("BALANCE for 5:" + r);
+						
 			r = app.showBalance("account1");
-			System.out.println("BALANCE for r:" + r);
+			System.out.println("BALANCE for 1:" + r);
 
-			r = app.deposit("account1", 200.00);
+			r = app.wire("account3", "account5", 20.0);
 			System.out.println( r );
 
-			r = app.showBalance("account1");
-			System.out.println("BALANCE for r:" + r);
-
-			r = app.topUp("account2", 300.00);
-			System.out.println( r );
-
-			r = app.showBalance("account2");
-			System.out.println( r );
-
-			r = app.withdraw("account1", 300.0);
-			System.out.println(r);
+			r = app.showBalance("account5");
+			System.out.println("BALANCE for 5:" + r);
 
 			r = app.showBalance("account1");
-			System.out.println( r );
+			System.out.println("BALANCE for 1:" + r);
 
-			r = app.purchase("account2", 3.0);
-			System.out.println(r);
+			boolean rrr = app.login("oof", "1717");
+			System.out.println(rrr);
 
-			r = app.showBalance("account2");
-			System.out.println( r );
-
-			r = app.collect("account2", 30.00);
-			System.out.println( r );
-
-			r = app.showBalance("account2");
-			System.out.println( r );
-
-			r = app.showBalance("account1");
-			System.out.println( r );
+			Customer customer = new Customer("taxID", app.getConnection());
+			// System.out.println(customer.setPIN("1717","2727"));
 
 
 			
@@ -109,51 +97,121 @@ public class Main
 			System.out.println("0  ATM interface");
 			System.out.println("1  Bank teller");
 			System.out.println("2 Set system date");
-			System.out.println("3 Leave bank of debt");
+			System.out.println("3 Set interest rates");
+			System.out.println("4 Leave bank of debt");
 			int loginTries = 0;
 			int option = myObj.nextInt();
-
+			String taxID = "";
+			String pin = "";
 			if (option == 0) {
 				System.out.println();
 				System.out.println("Booting up ATM...");
 				System.out.println();
 				boolean rr = false;
 				boolean atmON = true;
+				
 				while (loginTries < 3 && !rr) {
 					System.out.println();
 					System.out.println("Welcome to Debts R Us ATM");
 					System.out.println("Please log in...");
 					System.out.println();
-					String name = myObj.nextLine();
-					String pin = myObj.nextLine();
-					rr = app.login(name, pin);
+					System.out.println("TaxID:");
+					
+					String tempTaxID = myObj.next();
+					taxID = tempTaxID;
+					System.out.println();
+					System.out.println("PIN:");					
+					String tempPin = myObj.next();
+					pin = tempPin;
+					System.out.println();
+					rr = app.login(taxID, pin);
 					loginTries++;
 					if(!rr)
-						System.out.println("big oof you goofed");
+						System.out.println("big oof you goofed, Try again.");
 				}
-			System.out.println("ATM Inferface Options");
-			System.out.println("");
-			System.out.println("0: Deposit");
-			System.out.println("1: Top-Up");
-			System.out.println("2: Withdrawal");
-			System.out.println("3: Purchase");
-			System.out.println("4: Transfer");
-			System.out.println("5: Collect");
-			System.out.println("6: Wire");
-			System.out.println("7: Pay-Friend");
-			int input = myObj.nextInt();
-			//if(input = )
 
-					
-			//}
+				if(rr) {
+					while (atmON) {
+						Customer cust = new Customer(taxID, app.getConnection());
+						System.out.println("ATM Inferface Options");
+						System.out.println("");
+						System.out.println("0: Deposit");
+						System.out.println("1: Top-Up");
+						System.out.println("2: Withdrawal");
+						System.out.println("3: Purchase");
+						System.out.println("4: Transfer");
+						System.out.println("5: Collect");
+						System.out.println("6: Wire");
+						System.out.println("7: Pay-Friend");
+						System.out.println("8: Set Pin");
+						System.out.println("9: Leave ATM");
+						System.out.println();
+						int input = myObj.nextInt();
+
+						if (input == 0) {
+							System.out.println();
+							System.out.println("Which account would you like to deposit to?");
+							System.out.println();
+							String account = myObj.next();
+							System.out.println();
+							System.out.println("How much would you like to deposit?");
+							System.out.println();
+							double amount = myObj.nextDouble();
+
+						}
+
+						if (input == 8) {
+							System.out.println();
+							System.out.println("Verify PIN first:");
+							System.out.println();
+							String oldPin = myObj.next();
+							if (customer.verifyPIN(oldPin) == "0"){
+								System.out.println("Enter new PIN:");
+								System.out.println();
+								String newPin = myObj.next();
+								customer.setPIN(oldPin, newPin);
+								System.out.println("Success!\n");
+							}else{
+								System.out.println("Invalid PIN...\nReturning to ATM menu...\n");
+							}
+
+
+
+
+						}
+
+						if (input == 9) {
+							System.out.println();
+							System.out.println("Goodbye...");
+							System.out.println();
+							atmON = false;
+						}
+					}
+				}
+
+				if(loginTries == 3) {
+					System.out.println();
+					System.out.println("3 failed attempts... Rerouting to main menu");
+					System.out.println();
+				}
+			}
 
 			if (option == 1) {
+				System.out.println("Hello, I am the Bank Teller");
+				System.out.println("Tell me what you'd like me to do for you!");
+
 				System.out.println();
-				System.out.println("");
+				System.out.println();
+
+
+// "Write Check","Monthly Statement","List Closed Accounts",
+//         "DTER", "Customer Report", "Add Interest", "Create New Account",
+//         "Delete Closed Accounts and Customers", "Delete Transactions", 
 
 
 				
 			}
+
 			if (option == 2) {
 				System.out.println();
 				System.out.println("What date would you like to set the system to?");
@@ -175,13 +233,34 @@ public class Main
 			}
 
 			if (option == 3) {
+				System.out.println();
+				System.out.println("Which account type would you like to change the Interest rate for?");
+				System.out.println();
+
+				int day = myObj.nextInt();
+			}
+
+				//String input = myObj.nextLine();
+
+				// input = input.toUpperCase();
+
+				// if (input == "INTEREST_CHECKING" || input == "SAVINGS") {
+				// 	AccountType acc = AccountType.valueOf(input);
+				// 	System.out.println("What's the new rate?");
+				// 	double rate = myObj.nextDouble();
+				// 	System.out.println();
+				// 	r = app.setInterestRate(acc, rate);
+				// 	System.out.println(r);
+
+				// }
+
+			if (option == 4) {
 				System.out.println("Goodbye...");
 				systemOn = false;
 			}
 
 			}
-		}
-		}
+ 		}
 	//!### FINALIZAMOS
-}
+		}
 }

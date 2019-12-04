@@ -53,10 +53,10 @@ public class App implements Testable
 
 	////////////////////////////// Implement all of the methods given in the interface /////////////////////////////////
 	// Check the Testable.java interface for the function signatures and descriptions.
-	public boolean login(String name, String pin){
+	public boolean login(String taxID, String pin){
         try{
             Statement stmt = _connection.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM Customer WHERE name = '"+name+"' AND pin = '"+pin+"')");
+            ResultSet rs = stmt.executeQuery("SELECT * FROM Customer WHERE taxID = '"+taxID+"' AND pin = '"+pin+"'");
             if (rs.next()) {
                 String currentUser = rs.getString("taxID");
                 return true;
@@ -66,6 +66,11 @@ public class App implements Testable
         }
         return false;
     }
+
+	public OracleConnection getConnection(){
+		return _connection;
+	}
+
 	@Override
 	public String initializeSystem()
 	{
@@ -225,8 +230,9 @@ public class App implements Testable
     										"t_date DATE, " +
     										"type CHAR(32), " +
     										"t_id CHAR(11), " +
-    										"rec_id CHAR(10), " +
+    										"rec_id CHAR(10), " + 
     										"send_id CHAR(10), " +
+											"check_no CHAR(20)," +
     										"PRIMARY KEY (t_id), " +
     										"FOREIGN KEY (rec_id) REFERENCES Account(a_id) ON DELETE CASCADE," +
     										"FOREIGN KEY (send_id) REFERENCES Account(a_id) ON DELETE CASCADE )"; 
@@ -510,7 +516,7 @@ public class App implements Testable
 				}
 
 				try {
-					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialBalance+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', NULL, "+parse(id)+")");
+					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialBalance+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', NULL, "+parse(id)+", NULL)");
 				} catch(Exception e) {
 					System.out.println("Couldn't add to Transactions");
 					System.out.println(e);
@@ -606,7 +612,7 @@ public class App implements Testable
 			}
 
 			try {
-				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialTopUp+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'TOPUP', '"+generateRandomChars(9)+"', "+parse(linkedId)+", "+parse(id)+")");
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialTopUp+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'TOPUP', '"+generateRandomChars(9)+"', "+parse(linkedId)+", "+parse(id)+", NULL)");
 			} catch(Exception e) {
 				System.out.println("Couldn't add to Transactions");
 				System.out.println(e);
@@ -749,7 +755,7 @@ public class App implements Testable
 				ResultSet rs = stmt.executeQuery("UPDATE Account SET balance = balance + "+amount+" WHERE a_id= "+parse(accountId));
 				if(rs.next()){
 					try {
-						stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', NULL, "+parse(accountId)+")");
+						stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', NULL, "+parse(accountId)+", NULL)");
 					} catch(Exception e) {
 						System.out.println("Couldn't add to Transactions");
 						System.out.println(e);
@@ -842,7 +848,7 @@ public class App implements Testable
 					}
 					stmt.executeQuery("UPDATE Account SET balance = balance +"+l_amount+" WHERE a_id = "+parse(accountId));
 					stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(linkedId));
-					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'top-up', '"+generateRandomChars(9)+"', "+parse(linkedId)+", "+parse(accountId)+")");
+					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'top-up', '"+generateRandomChars(9)+"', "+parse(linkedId)+", "+parse(accountId)+", NULL)");
 					closeAccountBalanceCheck(accountId);
 				}
 			} catch(Exception e) {
@@ -920,7 +926,7 @@ public class App implements Testable
           		}
           		stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(to));
 				stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(from));
-				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'pay-friend', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+")");
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'pay-friend', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+", NULL)");
           		if(isFirstTransactionOfMonth(from)){
             		stmt.executeQuery("UPDATE Account SET balance = balance-5 WHERE a_id= "+parse(from));
           		}
@@ -1167,7 +1173,7 @@ public class App implements Testable
             		return "1";
         			}
         		stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
-        		stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'withdraw', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL)");
+        		stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'withdraw', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL, NULL)");
     			}
     			closeAccountBalanceCheck(accountId);
 			} catch(Exception e) {
@@ -1198,7 +1204,7 @@ public class App implements Testable
             			return "1";
         			}
         			stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
-        			stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'withdraw', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL)");
+        			stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'withdraw', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL, NULL)");
     				closeAccountBalanceCheck(accountId);
 				}
 			} catch(Exception e) {
@@ -1215,7 +1221,47 @@ public class App implements Testable
 	}
 
 	public String transfer(String from, String to, double amount){
-		return "0";
+		if(amount > 2000){
+			return "1";
+		}
+
+		if(checkClosed(from)){
+			System.out.println("From is closed");
+			return "1";
+		}
+    	if(checkClosed(to)){
+			System.out.println("To is closed");
+			return "1";
+		}
+
+      	try{
+			Statement stmt = _connection.createStatement();
+        	ResultSet rs = stmt.executeQuery("SELECT * FROM Account A1, Account A2 " +
+											"WHERE A1.a_id = "+parse(from)+" " + 
+											"AND (A1.a_type='INTEREST_CHECKING' OR A1.a_type='STUDENT_CHECKING' OR A1.a_type='SAVINGS') " +
+											"AND "+"A2.a_id= "+parse(to)+" " + 
+											"AND (A2.a_type='INTEREST_CHECKING' OR A2.a_type='STUDENT_CHECKING' OR A2.a_type='SAVINGS')"
+											);
+			
+        	if(rs.next()) {
+          		if(balTooLow(from, amount)){
+            		return "1";
+          		}
+          		stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(to));
+				stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(from));
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'transfer', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+", NULL)");
+				closeAccountBalanceCheck(from);
+        		closeAccountBalanceCheck(to);
+				return "0";
+        	}
+
+			
+      	}catch(Exception e){
+			System.out.println(e);
+        	return "1";
+      	}
+
+		return "1";
 	}
 
 	public String collect(String accountId, double amount) {
@@ -1224,8 +1270,7 @@ public class App implements Testable
 		}
 		double linkedNewBalance = 0.0;
 		double pocketNewBalance = 0.0;
-		double p_amount = amount - 0.03*amount;
-		double l_amount = amount - 0.03*amount;
+		double p_amount = amount + 0.03*amount;
 		String linkedId = "";
 		try {
 			Statement stmt = _connection.createStatement();
@@ -1237,13 +1282,13 @@ public class App implements Testable
 				ResultSet rs = stmt.executeQuery("SELECT * FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
 				if (rs.next()) {
 					linkedId = rs.getString("linked_id");
-					if (balTooLow(linkedId, amount)){
+					if (balTooLow(accountId, p_amount)){
 						System.out.println("Bal Too Low");
 						return "1";
 					}
 					stmt.executeQuery("UPDATE Account SET balance = balance -"+p_amount+" WHERE a_id = "+parse(accountId));
-					stmt.executeQuery("UPDATE Account SET balance = balance +"+l_amount+" WHERE a_id = "+parse(linkedId));
-					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+l_amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'collect', '"+generateRandomChars(9)+"', "+parse(accountId)+", "+parse(linkedId)+")");
+					stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(linkedId));
+					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'collect', '"+generateRandomChars(9)+"', "+parse(accountId)+", "+parse(linkedId)+", NULL)");
 					closeAccountBalanceCheck(linkedId);
 				}
 			} catch(Exception e) {
@@ -1262,19 +1307,109 @@ public class App implements Testable
 	//3%fee
 
 	public String wire(String from, String to, double amount) {
+		double fee_amount = amount + 0.02*amount;
+		System.out.println("jhaghah");
+		if(checkClosed(from)){
+			System.out.println("From is closed");
+			return "1";
+		}
+    	if(checkClosed(to)){
+			System.out.println("To is closed");
+			return "1";
+		}
+
+      	try{
+			Statement stmt = _connection.createStatement();
+			System.out.println("jhaghah");
+        	ResultSet rs = stmt.executeQuery("SELECT * FROM Owns O1, Owns O2, Account A1, Account A2 WHERE O1.taxID = O2.taxID AND O1.a_id = "+parse(from)+" AND O1.a_id = A1.a_id AND (A1.a_type = 'STUDENT_CHECKING' OR A1.a_type = 'INTEREST_CHECKING' OR A1.a_type = 'SAVINGS') AND O2.a_id = "+parse(to)+" AND O2.a_id = A2.a_id AND (A2.a_type = 'STUDENT_CHECKING' OR A2.a_type = 'INTEREST_CHECKING' OR A2.a_type = 'SAVINGS')");
+        	if(rs.next()) {
+          		if(balTooLow(from, fee_amount)){
+            		return "1";
+          		}
+				System.out.println("jhaghah");
+          		stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(to));
+				stmt.executeQuery("UPDATE Account SET balance = balance -"+fee_amount+" WHERE a_id = "+parse(from));
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'wire', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+", NULL)");
+			}
+        	closeAccountBalanceCheck(from);
+        	closeAccountBalanceCheck(to);
+      	}catch(Exception e){
+			System.out.println(e);
+        	return "1";
+      	}
+
 		return "0";
 	}
 	//Customer must be owner of both
 	//2% fee
 
 	public String writeCheck(String accountId, double amount) {
+		try {
+			Statement stmt = _connection.createStatement();
+			try {
+					ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND (a_type = 'Pocket' OR a_type = 'SAVINGS')");
+					if (rs.next()){
+						System.out.println("account type invalid");
+						return "1";
+					}
+					rs.close();
+			}catch(Exception e){
+				System.out.println("Couldn't select from account for type");
+				System.out.println(e);
+				return "1";
+			}
+				
+			ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId));
+			if (rs.next()){
+				if(balTooLow(accountId, amount)){
+					return "1";
+				4}
+			stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
+			stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'write_check', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL, "+ generateRandomChars(20) +")");
+			closeAccountBalanceCheck(accountId);
+			}
+		
+		}catch(Exception e){
+			System.out.println("Couldn't connect to database");
+			System.out.println(e);
+			return "1";
+		}
+
+
+		
 		return "0";
 	}
 
-	public String accrueInterest(String accountId) {
+	public String addInterest() {
+		// try{
+		// 	Statement stmt = _connection.createStatement();
+		// 	// ResultSet rs = executeQuery("SELECT
+		// 	// 					");
+		// //check last day of month
+		// //query for open and type is interest or savings
+		// //
+		// }catch(Exception e){
+		// 	System.out.println("oof you goofed: " + e);
+		// }
 		return "0";
 	}
 
-	//FOR ATM, deposit, top-up, withdrawal, purchase, transfer, collect, wire, pay-friend
-	//FOR Bank
+	// public String[] parseResultSetString(ResultSet rs, String key){
+	// 	try{
+	// 	ArrayList al = new ArrayList();
+	// 	while(rs.next()) {
+	// 		String id = rs.getString(key);
+	// 		al.add(id.trim());
+	// 	}
+	// 	rs.beforeFirst();
+	// 	String[] a = new String[al.size()];
+	// 	al.toArray(a);
+	// 	return a;
+	// 	}catch(SQLException e){
+	// 	e.printStackTrace();
+	// 	}
+	// 		return null;
+	// 	}
+	// //FOR ATM, deposit, top-up, withdrawal, purchase, transfer, collect, wire, pay-friend
+	// //FOR Bank
 }
