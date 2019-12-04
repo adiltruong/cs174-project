@@ -1,11 +1,13 @@
-import cs174a;
+package cs174a;
 
 import java.sql.*;
 import java.util.*;
 import oracle.jdbc.OracleConnection;
 import java.io.*;
+import cs174a.App;
 
-public class Transactions{
+
+public class Transactions extends App{
     private OracleConnection _connection;
     public Transactions(OracleConnection _connection){
         this._connection = _connection;
@@ -433,7 +435,134 @@ public class Transactions{
 
 
     //helper functions
+	public String setDate( int year, int month, int day ){
+		String sYear = Integer.toString(year);
+		String sMonth = Integer.toString(month);
+		String sDay = Integer.toString(day);
 
+		if(sMonth.length() < 2) {
+			sMonth = "0" + sMonth;
+		}
+		if (sDay.length() < 2) {
+			sDay = "0" + sDay;
+		}
+		String s = sYear + "-" + sMonth + "-" + sDay;
+		if(sYear.length() != 4) { //wrong year format
+			System.out.println("Invalid Year");
+			return "1 "+s;
+		} 
+
+		else if (month < 1 || month > 12) {
+			System.out.println("Invalid Month");
+			return "1 "+s;
+		}
+
+		else if (day < 1 || day >31) {
+			System.out.println("Invalid Day");
+			return "1 " +s;
+		}
+
+		else {
+			if (month == 2 && year%4 ==0) {
+				if (day > 29){
+					System.out.println("Invalid Day Feb Leap Year");
+					return "1 "+s;
+				}
+			}
+
+			else if (month == 2) {
+				if (day > 28) {
+					System.out.println("Invalid Day Feb Not Leap Year");
+					return "1 "+s;
+				}
+			}
+
+			else if (month == 4) {
+				if (day > 30) {
+					System.out.println("Invalid Day April");
+					return "1 "+s;
+				}
+			}
+
+			else if (month == 6) {
+				if (day > 30) {
+					System.out.println("Invalid Day June");
+					return "1 "+s;
+				}
+			}
+
+			else if (month == 9) {
+				if (day > 30) {
+					System.out.println("Invalid Day June");
+					return "1 "+s;
+				}
+			}
+
+			else if (month == 11) {
+				if (day >30) {
+					System.out.println("Invalid Day Novemember");
+					return "1 "+s;
+				}
+			}
+		}
+
+		try {
+
+				Statement stmt = _connection.createStatement();
+				System.out.println("Writing to table GlobalDate");
+				try{
+
+					String sqlDate = "DATE'"+s+"'";
+					String sql = "INSERT INTO GlobalDate VALUES ("+sqlDate+")";
+					stmt.executeUpdate(sql);
+
+				} catch(Exception e) {
+					System.out.println("Failed to write in GlobalDate.");
+					System.out.println(e);
+				}
+			} catch (Exception e) {
+				System.out.println("Failed to connect to DB.");
+				System.out.println(e);
+			}
+
+		return "0 " + s;
+	}
+
+	public String getDate(){
+    	try{
+    		Statement stmt = _connection.createStatement();
+      		ResultSet rs = stmt.executeQuery("SELECT MAX(globalDate) AS \"Recent Date\" FROM GlobalDate");
+      		
+			if(rs.next()) {
+				String date = rs.getString("Recent Date");
+        		System.out.println(date);
+				rs.close();
+        		return date;
+			}
+			
+    	} catch(Exception e){
+      		System.out.println(e);
+    	}
+    	return "";
+	}
+	  
+	  public String setInterestRate(AccountType accountType, double rate)
+	{
+		if (accountType == AccountType.POCKET || accountType == AccountType.STUDENT_CHECKING) {
+			System.out.println("Can't switch interest rate by type");
+			return "Type issue";
+		}
+
+		try {
+			Statement stmt = _connection.createStatement();
+			stmt.executeQuery("UPDATE Interest SET int_rate = "+rate+" WHERE type = '"+accountType+"' ");
+		} catch(Exception e) {
+			System.out.println("Couldn't update interest");
+			System.out.println(e);
+			return "1";
+		}
+		return "0";
+	}
     public static String generateRandomChars(int length) {
     	String candidateChars  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     	StringBuilder sb = new StringBuilder();

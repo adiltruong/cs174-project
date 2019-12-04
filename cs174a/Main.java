@@ -40,6 +40,8 @@ public class Main
 			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "account1", 1234.56, "theTaxID", "Im YoungMing", "Known" );
 			System.out.println( r );
 
+			Transactions transactions = new Transactions(app.getConnection());
+
 			r = app.createPocketAccount( "account2", "account1", 30.0, "theTaxID");
 			System.out.println( r );
 
@@ -53,7 +55,7 @@ public class Main
 			System.out.println( r );
 
 			System.out.println("payFriend: ");
-			r = app.payFriend("account4", "account2", 20.0);
+			r = transactions.payFriend("account4", "account2", 20.0);
 			System.out.println( r );
 
 			System.out.println("createCustomer: ");
@@ -69,7 +71,7 @@ public class Main
 			r = app.showBalance("account1");
 			System.out.println("BALANCE for 1:" + r);
 
-			r = app.writeCheck("account5", 20.0);
+			r = transactions.writeCheck("account5", 20.0);
 			System.out.println( r );
 
 			r = app.showBalance("account5");
@@ -82,7 +84,7 @@ public class Main
 			System.out.println(rrr);
 
 			Customer customer = new Customer("taxID", app.getConnection());
-			// System.out.println(customer.setPIN("1717","2727"));
+			System.out.println(customer.setPIN("1717","2727"));
 
 
 			
@@ -260,7 +262,8 @@ public class Main
 			}
 
 			}
- 		}
+		 }
+		 
 	//!### FINALIZAMOS
 		}
 }

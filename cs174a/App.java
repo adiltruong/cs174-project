@@ -1064,4 +1064,82 @@ public class App implements Testable
 			System.out.println(e);
 		}
 	}
+	public static String generateRandomChars(int length) {
+    	String candidateChars  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    	StringBuilder sb = new StringBuilder();
+    	Random random = new Random();
+    	for (int i = 0; i < length; i++) {
+        	sb.append(candidateChars.charAt(random.nextInt(candidateChars.length())));
+    	}
+
+    	return sb.toString();
+	  }
+	  public boolean checkClosed(String a_id) {
+		try {
+			Statement stmt = _connection.createStatement();
+
+			try {
+				ResultSet rs = stmt.executeQuery("SELECT isClosed FROM Account WHERE a_id = "+parse(a_id));
+				if (rs.next()){
+					int closed = rs.getInt("isClosed");
+					return closed > 0;
+				}
+				rs.close();
+			} catch (Exception e) {
+				System.out.println("Couldn't select closed");
+				System.out.println(e);
+			}
+		} catch (Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+			return false;
+		}
+		return false;
+	}
+
+	public void closeAccountBalanceCheck(String a_id) {
+		try {
+			Statement stmt = _connection.createStatement();
+			try {
+				stmt.executeQuery("UPDATE Account SET isClosed = 1 WHERE balance <= 0.01 AND a_id="+parse(a_id));
+			} catch (Exception e) {
+				System.out.println("Couldn't update");
+			}
+		} catch(Exception e) {
+			System.out.println("Couldn't connect to DB");
+			System.out.println(e);
+		}
+
+	}
+
+	public boolean balTooLow(String a_id, double amount) {
+		double bal = 0.0;
+		try(Statement stmt = _connection.createStatement()){
+
+			String sql = "SELECT balance " +
+					"FROM Account " +
+					"WHERE a_id = " + parse(a_id);
+			ResultSet r = stmt.executeQuery(sql);
+			if (r.next()) {
+				bal = r.getDouble("balance");
+			}
+		} catch(Exception e) {
+			System.out.println("Couldn't select balance");
+			return false;
+		}
+		return amount > bal;
+	}
+
+	public boolean isFirstTransactionOfMonth(String a_id){
+    	try{
+			Statement stmt = _connection.createStatement();
+      		ResultSet rs = stmt.executeQuery("SELECT * FROM Transaction T WHERE (T.rec_id = "+parse(a_id)+" OR T.send_id = "+parse(a_id)+") AND extract(month FROM T.t_date) = (select MAX(extract(month FROM C.globalDate)) FROM globalDate C)");
+      		if(rs.next()){
+        		return false;
+      		}
+    	} catch(Exception e){
+			System.out.println(e);
+    	}
+    	return true;
+  	}
 }
