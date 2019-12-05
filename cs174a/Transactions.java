@@ -272,12 +272,13 @@ public class Transactions extends App{
 
       	try{
 			Statement stmt = _connection.createStatement();
-        	ResultSet rs = stmt.executeQuery("SELECT * FROM Account A1, Account A2 " +
-											"WHERE A1.a_id = "+parse(from)+" " + 
-											"AND (A1.a_type='INTEREST_CHECKING' OR A1.a_type='STUDENT_CHECKING' OR A1.a_type='SAVINGS') " +
-											"AND "+"A2.a_id= "+parse(to)+" " + 
-											"AND (A2.a_type='INTEREST_CHECKING' OR A2.a_type='STUDENT_CHECKING' OR A2.a_type='SAVINGS')"
-											);
+        	ResultSet rs = stmt.executeQuery("SELECT * FROM Owns O1, Owns O2, Account A1, Account A2 "+
+			 									"WHERE O1.taxID = O2.taxID "+ 
+												 "AND O1.a_id = "+parse(from)+" AND O1.a_id = A1.a_id "+ 
+												 "AND (A1.a_type = 'STUDENT_CHECKING' OR A1.a_type = 'INTEREST_CHECKING' OR A1.a_type = 'SAVINGS') "+ 
+												 "AND O2.a_id = "+parse(to)+" AND O2.a_id = A2.a_id "+ 
+												 "AND (A2.a_type = 'STUDENT_CHECKING' OR A2.a_type = 'INTEREST_CHECKING' OR A2.a_type = 'SAVINGS')"
+											); 
 			
         	if(rs.next()) {
           		if(balTooLow(from, amount)){
@@ -355,7 +356,11 @@ public class Transactions extends App{
 
       	try{
 			Statement stmt = _connection.createStatement();
-        	ResultSet rs = stmt.executeQuery("SELECT * FROM Owns O1, Owns O2, Account A1, Account A2 WHERE O1.taxID = O2.taxID AND O1.a_id = "+parse(from)+" AND O1.a_id = A1.a_id AND (A1.a_type = 'STUDENT_CHECKING' OR A1.a_type = 'INTEREST_CHECKING' OR A1.a_type = 'SAVINGS') AND O2.a_id = "+parse(to)+" AND O2.a_id = A2.a_id AND (A2.a_type = 'STUDENT_CHECKING' OR A2.a_type = 'INTEREST_CHECKING' OR A2.a_type = 'SAVINGS')");
+        	ResultSet rs = stmt.executeQuery("SELECT * FROM Account A1, Account A2 " +
+											"WHERE A1.a_id = "+parse(from)+" " + 
+											"AND (A1.a_type='INTEREST_CHECKING' OR A1.a_type='STUDENT_CHECKING' OR A1.a_type='SAVINGS') " +
+											"AND A2.a_id= "+parse(to)+" " + 
+											"AND (A2.a_type='INTEREST_CHECKING' OR A2.a_type='STUDENT_CHECKING' OR A2.a_type='SAVINGS')");
         	System.out.println("safdiljsfd");
 			if(rs.next()) {
           		if(balTooLow(from, fee_amount)){
@@ -369,8 +374,9 @@ public class Transactions extends App{
 			System.out.println("safdiljsfd3");
         	closeAccountBalanceCheck(from);
         	closeAccountBalanceCheck(to);
-      	}catch(Exception e){
+      	}catch(SQLException e){
 			System.out.println(e);
+			e.printStackTrace();
         	return "1";
       	}
 

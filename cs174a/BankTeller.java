@@ -131,7 +131,7 @@ public class BankTeller extends App{
                                         "FROM Customer C " +
                                         "WHERE (SELECT sum(T.amount) " +
                                             "FROM Transaction T " +
-                                            "WHERE C.taxID = t.rec_id " +
+                                            "WHERE C.taxID = T.rec_id " +
                                                     "AND EXTRACT(month FROM t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) " +
                                                                                            "FROM GlobalDate)) > 10000");
             String [] dterID = parseRsAsString(customers, "taxID");
@@ -206,17 +206,12 @@ public class BankTeller extends App{
         }
 
         for(int i=0;i<openAccounts.length;i++){
-            double interest = calculateInterest(openAccounts[i], balances[i], monthlyRates.get(types[i]));
+            //double interest = calculateInterest(openAccounts[i], balances[i], monthlyRates.get(types[i]));
+            double interest = 0.0;
 
             if(interest > 0){
                 this.executeQ("UPDATE Account SET balance = balance + "+interest+" WHERE a_id = '"+openAccounts[i]+"'");
-                this.executeQ("INSERT INTO Transaction VALUES ( "+interest+", "+
-                                                                    "TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), "+
-                                                                    "'accrue-interest', "+
-                                                                    "'"+generateRandomChars(9)+"', "+
-                                                                    "NULL, "+
-                                                                    "'"+openAccounts[i])+"', "+
-                                                                    "NULL)");
+                this.executeQ("INSERT INTO Transaction VALUES ( "+interest+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'accrue-interest', '"+generateRandomChars(9)+"', NULL,'"+openAccounts[i]+"', NULL)");
             }
         }
 
