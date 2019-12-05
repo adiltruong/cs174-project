@@ -44,6 +44,7 @@ public class Main
 
 			Transactions transactions = new Transactions(app.getConnection());
 			BankTeller bankTeller = new BankTeller(app.getConnection());
+			Customer customer = new Customer("taxID", app.getConnection());
 
 			r = app.createPocketAccount( "account2", "account1", 30.0, "theTaxID");
 			System.out.println( r );
@@ -80,17 +81,20 @@ public class Main
 			r = bankTeller.checkTransaction("account5", 20.0);
 			System.out.println( r );
 
+			r = bankTeller.checkTransaction("account5", 50.0);
+			System.out.println( r );
+
+
 			r = app.showBalance("account5");
 			System.out.println("BALANCE for 5:" + r);
 
 			r = app.showBalance("account1");
 			System.out.println("BALANCE for 1:" + r);
 
-			boolean rrr = app.login("oof", "1717");
-			System.out.println(rrr);
-
-			Customer customer = new Customer("taxID", app.getConnection());
-			System.out.println(customer.setPIN("1717","2727"));
+			
+			//System.out.println(customer.setPIN("1717","2727"));
+			System.out.println("TESTING>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n");
+			System.out.println(bankTeller.generateMonthlyStatement("taxID"));
 
 
 			

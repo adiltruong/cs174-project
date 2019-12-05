@@ -872,139 +872,6 @@ public class App implements Testable
       	}
 		return "0";
 	}
-
-	public static String parse(String s){
-    	return "'" + s.replace("'", "''") + "'";
-  	}
-
-  	public static String parseNULL(String s){
-    	if(s ==null || s.isEmpty()){
-      		return "NULL";
-    	}
-    	else{
-      		return parse(s);
-    	}
-  	}
-
-	void populate_customers(String filename){
-
-    	String line="";
-    	try (Statement stmt = _connection.createStatement()) {
-    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-      			while ((line = br.readLine()) != null) {
-        			String[] columns = line.split(",");
-
-        			String name = parse(columns[0]);
-        			String taxID = parse(columns[1]);
-        			String address = parse(columns[2]);
-        			String pin = parse(columns[3]);
-
-        			String query = "INSERT INTO Customer (name, taxID, address, pin) values ("+
-          			name+", " + taxID + ", " + address + ", " + pin + ")";
-
-        			stmt.executeQuery(query);
-
-      			}
-    		}
-    		catch (IOException e) {
-      			e.printStackTrace();
-    		}
-    	}
-    	catch (Exception e) {
-    		System.out.println("Couldn't connect to database");
-    		System.out.println(e);
-    	}
-  	}
-  	
-
-  	void populate_accounts(String filename){
-    	String line="";
-    	try (Statement stmt = _connection.createStatement()) {
-    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-      			while ((line = br.readLine()) != null) {
-        			String[] columns = line.split(",");
-
-        			String id = parse(columns[0]);
-        			String type = parse(columns[1]);
-        			String branch = parse(columns[2]);
-        			String primary_owner = parse(columns[3]);
-        			String linked_id = parseNULL(columns[4]);
-        			String balance = parse(columns[5]);
-
-        			String query = "INSERT INTO Account (a_id, a_type, bank_branch, PrimaryOwner,  isClosed, linked_id, balance ) values ("+
-            			id+", " + type + ", " + branch + ", " + primary_owner + ", 0, " + linked_id +", "+balance+")";
-
-
-        			stmt.executeQuery(query);
-
-      			}
-    		} catch (IOException e) {
-      			e.printStackTrace();
-    		}
-  		} catch (Exception e) {
-  			System.out.println("Couldn't connect to database");
-  			System.out.println(e);
-  		}
-	}
-
-	void populate_owns(String filename){
-		String line="";
-		try (Statement stmt = _connection.createStatement()) {
-    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-      			while ((line = br.readLine()) != null) {
-        			String[] columns = line.split(",");
-
-        			String tax_id = parse(columns[0]);
-        			String aid = parse(columns[1]);
-
-        			String query = "insert into Owns (taxID, a_id) values ("+
-          			tax_id+", " + aid + ")";
-
-        			stmt.executeQuery(query);
-
-      			}
-    		} catch (IOException e) {
-      			e.printStackTrace();
-    		}
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-	}
-
-	void populate_interest(String filename){
-		String line="";
-		try (Statement stmt = _connection.createStatement()) {
-    		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-      			while ((line = br.readLine()) != null) {
-        			String[] columns = line.split(",");
-
-        			String a_type = parse(columns[0]);
-        			String rate = columns[1];
-
-        			String query = "INSERT INTO Interest VALUES ("+
-          			a_type+", " + rate + ")";
-
-        			stmt.executeQuery(query);
-
-      			}
-    		} catch (IOException e) {
-      			e.printStackTrace();
-    		}
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-	}
-	public static String generateRandomChars(int length) {
-    	String candidateChars  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    	StringBuilder sb = new StringBuilder();
-    	Random random = new Random();
-    	for (int i = 0; i < length; i++) {
-        	sb.append(candidateChars.charAt(random.nextInt(candidateChars.length())));
-    	}
-
-    	return sb.toString();
-	  }
-	  public boolean checkClosed(String a_id) {
 	//END OF TESTABLE HERE
 
 
@@ -1077,8 +944,6 @@ public class App implements Testable
 			System.out.println(e);
 			return "1";
 		}
-<<<<<<< HEAD
-=======
 		return "0";
 	}
 
@@ -1261,7 +1126,7 @@ public class App implements Testable
   		populate_customers("cs174a/inputs/customers.csv");
     	populate_accounts("cs174a/inputs/accounts.csv");
     	populate_owns("cs174a/inputs/owns.csv");
-    	populate_transactions("cs174a/inputs/transactions.csv");
+    	//populate_transactions("cs174a/inputs/transactions.csv");
     	populate_interest("cs174a/inputs/interest.csv");
     	populate_date();
     // 	populate_interest_paid();
@@ -1519,7 +1384,6 @@ public class App implements Testable
 			System.out.println("Couldn't connect to DB");
 			System.out.println(e);
 		}
->>>>>>> 77e473c0a2f795a898a439d8c858de8e8d8d4cc6
 
 	}
 
@@ -1553,8 +1417,6 @@ public class App implements Testable
     	}
     	return true;
   	}
-<<<<<<< HEAD
-=======
 
 	//check if accountType is not POCKET
 	//balance Too Low, cant use
@@ -1592,5 +1454,4 @@ public class App implements Testable
 	// 	}
 	// //FOR ATM, deposit, top-up, withdrawal, purchase, transfer, collect, wire, pay-friend
 	// //FOR Bank
->>>>>>> 77e473c0a2f795a898a439d8c858de8e8d8d4cc6
 }
