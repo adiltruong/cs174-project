@@ -521,7 +521,7 @@ public class App implements Testable
 			}
 
 			try {
-				stmt.executeQuery("UPDATE Account SET balance = "+ (linkedBalance-initialTopUp)+" WHERE a_id  = "+parse(linkedId));
+				stmt.executeQuery("UPDATE Account SET balance = "+ (linkedBalance-initialTopUp+5)+" WHERE a_id  = "+parse(linkedId));
 			} catch(Exception e) {
 				System.out.println("Failed to update account");
 				return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
@@ -1405,7 +1405,7 @@ public class App implements Testable
 	public boolean isFirstTransactionOfMonth(String a_id){
     	try{
 			Statement stmt = _connection.createStatement();
-      		ResultSet rs = stmt.executeQuery("SELECT * FROM Transaction T WHERE (T.rec_id = "+parse(a_id)+" OR T.send_id = "+parse(a_id)+") AND extract(month FROM T.t_date) = (select MAX(extract(month FROM C.globalDate)) FROM globalDate C)");
+      		ResultSet rs = stmt.executeQuery("SELECT * FROM Transaction T WHERE (T.rec_id = "+parse(a_id)+" OR T.send_id = "+parse(a_id)+")");
       		if(rs.next()){
         		return false;
       		}

@@ -11,6 +11,9 @@ public class BankTeller extends App{
     //Statement stmt;
     
     Transactions t;
+    private int [] daysInMonthRegular = {31,28,31,30,31,30,31,31,30,31,30,31};
+    private int [] daysInMonthLeap = {31,29,31,30,31,30,31,31,30,31,30,31};
+
     public BankTeller(OracleConnection _connection){//constructor
         this._connection = _connection;
         this.t = new Transactions(_connection);
@@ -170,6 +173,53 @@ public class BankTeller extends App{
         return "0";
     }
     public String addInterest(){
+        if (!isLastDay()){
+            return "1";
+        }
+
+        ResultSet openAcc_id = this.executeQ("SELECT a_id "+
+                                                    "FROM Account "+
+                                                    "WHERE isClosed = 0");
+
+        ResultSet openAcc_bal = this.executeQ("SELECT balance "+
+                                                    "FROM Account "+
+                                                    "WHERE isClosed = 0");
+        ResultSet openAcc_type = this.executeQ("SELECT a_type "+
+                                                    "FROM Account "+
+                                                    "WHERE isClosed = 0");
+        
+        String [] openAccounts = parseRsAsString(openAcc_id, "a_id");
+        double [] balances = parseRsAsDouble(openAcc_bal, "balance");
+        String [] types = parseRsAsString(openAcc_type, "a_type");
+
+        ResultSet interest_type = this.executeQ("SELECT type "+
+                                                    "FROM Interest");
+        ResultSet interest_rate = this.executeQ("SELECT int_rate "+
+                                                    "FROM Interest");
+
+        String [] type = parseRsAsString(interest_type, "type");
+        double [] rate = parseRsAsDouble(interest_rate, "int_rate");
+        Map<String, Double> monthlyRates = new HashMap<String, Double>();
+
+        for(int i=0; i<type.length; i++){
+            monthlyRates.put(type[i], rate[i]/12.0);
+        }
+
+        for(int i=0;i<openAccounts.length;i++){
+            double interest = calculateInterest(openAccounts[i], balances[i], monthlyRates.get(types[i]));
+
+            if(interest > 0){
+                this.executeQ("UPDATE Account SET balance = balance + "+interest+" WHERE a_id = '"+openAccounts[i]+"'");
+                this.executeQ("INSERT INTO Transaction VALUES ( "+interest+", "+
+                                                                    "TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), "+
+                                                                    "'accrue-interest', "+
+                                                                    "'"+generateRandomChars(9)+"', "+
+                                                                    "NULL, "+
+                                                                    "'"+openAccounts[i])+"', "+
+                                                                    "NULL)");
+            }
+        }
+
         return "0";
     }
     public String createAccount(AccountType accountType, String id, double initialBalance, String tin, String name, String address){//use app to make specific accounts/new customers
@@ -281,4 +331,28 @@ public class BankTeller extends App{
         }
         return rs;
     }
+
+    public boolean isLastDay() {
+        String currentDate = t.getDate();
+        int year = Integer.parseInt(currentDate.substring(0,4));
+        int month = Integer.parseInt(currentDate.substring(5,7));
+        int day = Integer.parseInt(currentDate.substring(8,10));
+
+        if (year%4 == 0) { //leap year
+            if (day == daysInMonthLeap[month-1]){
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        else {
+            if (day == daysInMonthRegular[month-1]){
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
 }
