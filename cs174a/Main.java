@@ -52,7 +52,7 @@ public class Main
 			r = app.setInterestRate( AccountType.INTEREST_CHECKING, 3.5);
 			System.out.println(r);
 
-			r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "account3", 1234.56, "someID", "oof", "haha" );
+			r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "account3", 12340000.56, "someID", "oof", "haha" );
 			System.out.println( r );
 
 			r = app.createPocketAccount( "account4", "account3", 50.0, "someID");
@@ -95,8 +95,19 @@ public class Main
 			//System.out.println(customer.setPIN("1717","2727"));
 			System.out.println("TESTING>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n");
 			//System.out.println(bankTeller.generateMonthlyStatement("taxID"));
-			System.out.println(bankTeller.listClosedAccounts());
-
+			//System.out.println(bankTeller.listClosedAccounts());
+			r = app.showBalance("account3");
+			System.out.println("BALANCE for 3:" + r);
+			r = app.showBalance("account5");
+			System.out.println("BALANCE for 5:" + r);
+			r = transactions.wire("account3","account5", 100000);
+			System.out.println("wire: " + r);
+			r = app.showBalance("account5");
+			System.out.println("BALANCE for 5:" + r);
+			r = app.showBalance("account3");
+			System.out.println("BALANCE for 3:" + r);
+			System.out.println("Wire: " + r);
+			System.out.println(bankTeller.generateDTER());
 			
 
 		boolean systemOn = true;

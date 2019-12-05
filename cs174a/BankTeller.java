@@ -6,7 +6,7 @@ import oracle.jdbc.OracleConnection;
 import java.io.*;
 import cs174a.Transactions;
 
-public class BankTeller{
+public class BankTeller extends App{
     private OracleConnection _connection;
     //Statement stmt;
     
@@ -122,22 +122,78 @@ public class BankTeller{
         return "1";
     }
     public String generateDTER(){
+        try{
+            String dter = "Government Drug and Tax Evasion Report:\n";
+            ResultSet customers = this.executeQ("SELECT C.taxID " +
+                                        "FROM Customer C " +
+                                        "WHERE (SELECT sum(T.amount) " +
+                                            "FROM Transaction T " +
+                                            "WHERE C.taxID = t.rec_id " +
+                                                    "AND EXTRACT(month FROM t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) " +
+                                                                                           "FROM GlobalDate)) > 10000");
+            String [] dterID = parseRsAsString(customers, "taxID");
+            if(dterID.length == 0)
+                return dter + "No accounts found\n";
+            else{
+                for(String s : dterID){
+                    dter += s + '\n';
+                }
+            }
+            return dter;
+        }catch(Exception e ){
+            e.printStackTrace();
+        }
         return "0";
     }
     public String customerReport(String taxID){
+        try{
+            ResultSet customerAcc = this.executeQ("SELECT A.a_id " +
+                                                    "FROM Account A, Owns O " +
+                                                    "WHERE taxID = '" + taxID + "' AND A.a_id = O.a_id" );
+            ResultSet isAccClosed = this.executeQ("SELECT A.isClosed " +
+                                                    "FROM Account A, Owns O " +
+                                                    "WHERE taxID = '" + taxID + "' AND A.a_id = O.a_id" );        
+            String [] customerID = parseRsAsString(customerAcc, "a_id");
+            String [] isClosed = parseRsAsString(isAccClosed, "isClosed");
+            String report = "Customer Report for: " + taxID + "\n";
+            for(int i = 0; i < customerID.length; i++){
+                if(isClosed[i] == "1")
+                    report += "ID: " + customerID[i] + ", Is Closed: True\n";
+                else
+                    report += "ID: " + customerID[i] + ", Is Closed: False\n";
+            }
+            report += "\n";
+            return report;
+        }catch(Exception e){
+            e.printStackTrace();
+        }
         return "0";
     }
     public String addInterest(){
         return "0";
     }
-    public String createAccount(){//use app to make specific accounts/new customers
+    public String createAccount(AccountType accountType, String id, double initialBalance, String tin, String name, String address){//use app to make specific accounts/new customers
+        this.createCheckingSavingsAccount(accountType, id, initialBalance, tin, name, address);
         return "0";
     }
     public String deleteClosedAccountsCustomers(){
-        return "0";
+        try{
+            this.executeQ("DELETE FROM Account " + 
+                          "WHERE isClosed = 1 ");
+            this.executeQ("DELETE FROM Owns " + 
+                          "WHERE EXISTS(SELECT * FROM Account " + 
+                                        "WHERE Owns.a_id = Account.a_id ");
+            this.executeQ("DELETE FROM Customer " +
+                          "WHERE NOT EXISTS(SELECT * FROM Owns " +
+                                            "WHERE Customer.taxID = Customer.taxID");
+            return "0 All closed accounts and customers without accounts deleted...";
+        }catch(Exception e){    
+            e.printStackTrace();
+        }
+        return "1";
     }
     public String deleteTransactions(){
-        return "0";
+        return "0 Deleted all transactions...";
     }
 
     //helper functions

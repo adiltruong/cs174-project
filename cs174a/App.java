@@ -1035,7 +1035,6 @@ public class App implements Testable
 
 	public String wire(String from, String to, double amount) {
 		double fee_amount = amount + 0.02*amount;
-		System.out.println("jhaghah");
 		if(checkClosed(from)){
 			System.out.println("From is closed");
 			return "1";
@@ -1047,13 +1046,11 @@ public class App implements Testable
 
       	try{
 			Statement stmt = _connection.createStatement();
-			System.out.println("jhaghah");
         	ResultSet rs = stmt.executeQuery("SELECT * FROM Owns O1, Owns O2, Account A1, Account A2 WHERE O1.taxID = O2.taxID AND O1.a_id = "+parse(from)+" AND O1.a_id = A1.a_id AND (A1.a_type = 'STUDENT_CHECKING' OR A1.a_type = 'INTEREST_CHECKING' OR A1.a_type = 'SAVINGS') AND O2.a_id = "+parse(to)+" AND O2.a_id = A2.a_id AND (A2.a_type = 'STUDENT_CHECKING' OR A2.a_type = 'INTEREST_CHECKING' OR A2.a_type = 'SAVINGS')");
         	if(rs.next()) {
           		if(balTooLow(from, fee_amount)){
             		return "1";
           		}
-				System.out.println("jhaghah");
           		stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(to));
 				stmt.executeQuery("UPDATE Account SET balance = balance -"+fee_amount+" WHERE a_id = "+parse(from));
 				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'transfer', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+", NULL)");
