@@ -541,7 +541,6 @@ public class Transactions extends App{
       		
 			if(rs.next()) {
 				String date = rs.getString("Recent Date");
-        		System.out.println(date);
 				rs.close();
         		return date;
 			}

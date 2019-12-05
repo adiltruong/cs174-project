@@ -31,7 +31,7 @@ public class Main
 			app.dropTables();
 			app.createTables();
 			app.populate_tables();
-			r = app.setDate(2011,3,1);
+			r = app.setDate(2011,3,31);
 			System.out.println(r);
 
 			// Example tests.  We'll overwrite your Main.main() function with our final tests.
@@ -108,6 +108,8 @@ public class Main
 			System.out.println("BALANCE for 3:" + r);
 			System.out.println("Wire: " + r);
 			System.out.println(bankTeller.generateDTER());
+
+			System.out.println(bankTeller.addInterest());
 			
 
 		boolean systemOn = true;

@@ -1418,37 +1418,4 @@ public class App implements Testable
 	//check if accountType is not POCKET
 	//balance Too Low, cant use
 	//
-
-	public String addInterest() {
-		// try{
-		// 	Statement stmt = _connection.createStatement();
-		// 	// ResultSet rs = executeQuery("SELECT
-		// 	// 					");
-		// //check last day of month
-		// //query for open and type is interest or savings
-		// //
-		// }catch(Exception e){
-		// 	System.out.println("oof you goofed: " + e);
-		// }
-		return "0";
-	}
-
-	// public String[] parseResultSetString(ResultSet rs, String key){
-	// 	try{
-	// 	ArrayList al = new ArrayList();
-	// 	while(rs.next()) {
-	// 		String id = rs.getString(key);
-	// 		al.add(id.trim());
-	// 	}
-	// 	rs.beforeFirst();
-	// 	String[] a = new String[al.size()];
-	// 	al.toArray(a);
-	// 	return a;
-	// 	}catch(SQLException e){
-	// 	e.printStackTrace();
-	// 	}
-	// 		return null;
-	// 	}
-	// //FOR ATM, deposit, top-up, withdrawal, purchase, transfer, collect, wire, pay-friend
-	// //FOR Bank
 }

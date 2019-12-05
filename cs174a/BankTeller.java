@@ -8,7 +8,7 @@ import cs174a.Transactions;
 
 public class BankTeller extends App{
     private OracleConnection _connection;
-    //Statement stmt;
+    //Statement stmt; 
     
     Transactions t;
     private int [] daysInMonthRegular = {31,28,31,30,31,30,31,31,30,31,30,31};
@@ -124,6 +124,7 @@ public class BankTeller extends App{
         }
         return "1";
     }
+
     public String generateDTER(){
         try{
             String dter = "Government Drug and Tax Evasion Report:\n";
@@ -148,6 +149,7 @@ public class BankTeller extends App{
         }
         return "0";
     }
+
     public String customerReport(String taxID){
         try{
             ResultSet customerAcc = this.executeQ("SELECT A.a_id " +
@@ -192,6 +194,10 @@ public class BankTeller extends App{
         double [] balances = parseRsAsDouble(openAcc_bal, "balance");
         String [] types = parseRsAsString(openAcc_type, "a_type");
 
+        if (openAccounts.length < 1) {
+            return "1";
+        }
+
         ResultSet interest_type = this.executeQ("SELECT type "+
                                                     "FROM Interest");
         ResultSet interest_rate = this.executeQ("SELECT int_rate "+
@@ -205,9 +211,10 @@ public class BankTeller extends App{
             monthlyRates.put(type[i], rate[i]/12.0);
         }
 
+        System.out.println(monthlyRates.get(type[0]));
         for(int i=0;i<openAccounts.length;i++){
-            //double interest = calculateInterest(openAccounts[i], balances[i], monthlyRates.get(types[i]));
-            double interest = 0.0;
+
+            double interest = accrueInterest(openAccounts[i], balances[i], monthlyRates.get(types[i]));
 
             if(interest > 0){
                 this.executeQ("UPDATE Account SET balance = balance + "+interest+" WHERE a_id = '"+openAccounts[i]+"'");
@@ -217,6 +224,58 @@ public class BankTeller extends App{
 
         return "0";
     }
+
+    public double accrueInterest(String a_id, double endBalance, double monthlyRate) {
+        ResultSet pos_transactions_days = this.executeQ("SELECT EXTRACT(DAY FROM t_date) AS day FROM Transaction WHERE rec_id = '"+a_id+"' AND EXTRACT(MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH FROM GlobalDate)) FROM GlobalDate)");
+        ResultSet pos_transactions_amounts = this.executeQ("SELECT AMOUNT FROM Transaction WHERE rec_id = '"+a_id+"' AND EXTRACT( MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH from globalDate)) FROM GlobalDate)");
+        ResultSet neg_transactions_days = this.executeQ("SELECT EXTRACT(DAY FROM t_date) AS day FROM Transaction WHERE send_id = '"+a_id+"' AND EXTRACT(MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH FROM GlobalDate)) FROM GlobalDate)");
+        ResultSet neg_transactions_amounts = this.executeQ("SELECT AMOUNT FROM Transaction WHERE send_id = '"+a_id+"' AND EXTRACT( MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH from globalDate)) FROM GlobalDate)");
+        double initial = calculateInitialBalance(pos_transactions_amounts, neg_transactions_amounts, endBalance);
+        int currentMonth = Integer.parseInt(t.getDate().substring(5,7));
+        int year = Integer.parseInt(t.getDate().substring(0,4));
+
+        if(year % 4==0) {
+            double total = 0.0;
+            total+=intHelper(pos_transactions_amounts, pos_transactions_days, 1, currentMonth);
+            total+=intHelper(neg_transactions_amounts, neg_transactions_days, -1, currentMonth);
+            total+=initial*daysInMonthLeap[currentMonth-1];
+            return total*(monthlyRate/100.0)/daysInMonthLeap[currentMonth-1];
+        }
+
+        else {
+            double total = 0.0;
+            total+=intHelper(pos_transactions_amounts, pos_transactions_days, 1, currentMonth);
+            total+=intHelper(neg_transactions_amounts, neg_transactions_days, -1, currentMonth);
+            total+=initial*daysInMonthRegular[currentMonth-1];
+            return total*(monthlyRate/100.0)/daysInMonthRegular[currentMonth-1];
+        }
+    }
+
+    private double intHelper(ResultSet transactions_amounts, ResultSet transactions_days, int sign, int currentMonth){
+        double total=0.0;
+        double [] amounts = parseRsAsDouble(transactions_amounts, "amount");
+        System.out.print(amounts.length+ "\n");
+        double [] days = parseRsAsDouble(transactions_days, "day");
+        System.out.print(days.length+ "\n");
+        int year = Integer.parseInt(t.getDate().substring(0,4));
+
+        if (year % 4 == 0) {
+            for(int i=0;i<amounts.length;i++){
+
+                total+=sign*amounts[i]*(daysInMonthLeap[currentMonth-1] - days[i]);
+
+            }
+        } else {
+            for(int i=0;i<amounts.length;i++){
+
+                total+=sign*amounts[i]*(daysInMonthRegular[currentMonth-1] - days[i]);
+
+            }
+        }
+        return total;
+    }
+
+
     public String createAccount(AccountType accountType, String id, double initialBalance, String tin, String name, String address){//use app to make specific accounts/new customers
         this.createCheckingSavingsAccount(accountType, id, initialBalance, tin, name, address);
         return "0";
