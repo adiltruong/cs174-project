@@ -225,4 +225,28 @@ public class BankTeller{
         }
         return rs;
     }
+
+    public boolean isLastDay() {
+        String currentDate = t.getDate();
+        int year = Integer.parseInt(currentDate.substring(0,4));
+        int month = Integer.parseInt(currentDate.substring(5,7));
+        int day = Integer.parseInt(currentDate.substring(8,10));
+
+        if (year%4 == 0) { //leap year
+            if (day == daysInMonthLeap[month-1]){
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        else {
+            if (day == daysInMonthRegular[month-1]){
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
 }
