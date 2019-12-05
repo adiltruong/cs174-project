@@ -127,11 +127,11 @@ public class BankTeller extends App{
     public String generateDTER(){
         try{
             String dter = "Government Drug and Tax Evasion Report:\n";
-            ResultSet customers = this.executeQ("SELECT C.taxID " +
-                                        "FROM Customer C " +
+            ResultSet customers = this.executeQ("SELECT O.taxID " +
+                                        "FROM Owns O " +
                                         "WHERE (SELECT sum(T.amount) " +
                                             "FROM Transaction T " +
-                                            "WHERE C.taxID = T.rec_id " +
+                                            "WHERE O.a_id = T.rec_id " +
                                                     "AND EXTRACT(month FROM t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) " +
                                                                                            "FROM GlobalDate)) > 10000");
             String [] dterID = parseRsAsString(customers, "taxID");
@@ -139,7 +139,7 @@ public class BankTeller extends App{
                 return dter + "No accounts found\n";
             else{
                 for(String s : dterID){
-                    dter += s + '\n';
+                    dter += "ID: " + s + '\n';
                 }
             }
             return dter;
