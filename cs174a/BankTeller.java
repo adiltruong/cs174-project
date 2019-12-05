@@ -24,45 +24,62 @@ public class BankTeller{
         String statement = "";
         double totalMonthlyBalance = 0.00;
         try{
-            Statement stmt = _connection.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT a_id, balance "+ 
+            ResultSet rs = this.executeQ("SELECT a_id, balance "+ 
                             "FROM Account " +
                             "WHERE primaryOwner = '" + taxID + "'");
             String [] account = parseRsAsString(rs, "a_id");
-            rs = stmt.executeQuery("SELECT a_id, balance "+ 
+            rs = this.executeQ("SELECT a_id, balance "+ 
                             "FROM Account " +
                             "WHERE primaryOwner = '" + taxID + "'");
             double [] balance = parseRsAsDouble(rs, "balance");
             for(int i = 0; i < account.length; i++){
                 statement += "Account ID: " + account[i] + "\n";
                 totalMonthlyBalance += balance[i];
-                ResultSet owns = stmt.executeQuery("SELECT C.address " + 
+                ResultSet ownsNames = this.executeQ("SELECT C.name " + 
                                                         "FROM Customer C, Owns O " +
                                                         "WHERE O.a_id = '" +account[i]+ "' AND C.taxID = O.taxID");
-                ResultSet owns1 = stmt.executeQuery("SELECT C.name " + 
+                ResultSet ownsAddress = this.executeQ("SELECT C.address " + 
                                                         "FROM Customer C, Owns O " +
                                                         "WHERE O.a_id = '" +account[i]+ "' AND C.taxID = O.taxID");
-                statement+=ownsList(owns1, owns);
-                ResultSet pos_transactions = stmt.executeQuery("SELECT type, t_date, amount " +
+                statement+=ownsList(ownsNames, ownsAddress);
+                ResultSet posTransType = this.executeQ("SELECT type " +
                                                                     "FROM Transaction "+
                                                                     "WHERE rec_id='"+account[i]+"' "+
                                                                     "AND EXTRACT(month from t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate)");
-                System.out.println("oof4");
-                ResultSet neg_transactions = stmt.executeQuery("SELECT type, t_date, amount " +
-                                                                    "FROM Transaction " + 
-                                                                    "WHERE send_id='"+account[i]+"' " +
-                                                                    "AND EXTRACT(month FROM t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate)");
-                
-                
-                System.out.println("oof5");
-                double inital = calculateInitialBalance(pos_transactions, neg_transactions, balance[i]);
-               System.out.println(inital);
+                ResultSet posTransDate = this.executeQ("SELECT t_date " +
+                                                                    "FROM Transaction "+
+                                                                    "WHERE rec_id='"+account[i]+"' "+
+                                                                    "AND EXTRACT(month from t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate)");
+                ResultSet posTransAmount = this.executeQ("SELECT amount " +
+                                                                    "FROM Transaction "+
+                                                                    "WHERE rec_id='"+account[i]+"' "+
+                                                                    "AND EXTRACT(month from t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate)");
+                ResultSet negTransType = this.executeQ("SELECT type " +
+                                                                    "FROM Transaction "+
+                                                                    "WHERE send_id='"+account[i]+"' "+
+                                                                    "AND EXTRACT(month from t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate)");
+                ResultSet negTransDate = this.executeQ("SELECT t_date " +
+                                                                    "FROM Transaction "+
+                                                                    "WHERE send_id='"+account[i]+"' "+
+                                                                    "AND EXTRACT(month from t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate)");
+                ResultSet negTransAmount = this.executeQ("SELECT amount " +
+                                                                    "FROM Transaction "+
+                                                                    "WHERE send_id='"+account[i]+"' "+
+                                                                    "AND EXTRACT(month from t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate)");
+                double inital = calculateInitialBalance(posTransAmount, negTransAmount, balance[i]);
                 statement+= String.format("Initial Balance: $%.2f \n", inital);
-
+                posTransAmount = this.executeQ("SELECT amount " +
+                                                                    "FROM Transaction "+
+                                                                    "WHERE rec_id='"+account[i]+"' "+
+                                                                    "AND EXTRACT(month from t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate)");
+                negTransAmount = this.executeQ("SELECT amount " +
+                                                                    "FROM Transaction "+
+                                                                    "WHERE send_id='"+account[i]+"' "+
+                                                                    "AND EXTRACT(month from t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate)");
                 statement+="Positive Transactions:\n";
-                statement+=getTransactionList(pos_transactions);
+                statement+=getTransactionList(posTransAmount, posTransDate, posTransType);
                 statement+="Negative Transactions:\n";
-                statement+=getTransactionList(neg_transactions);
+                statement+=getTransactionList(negTransAmount, negTransDate, negTransType);
 
                 statement+=String.format("Final Balance: $%.2f \n",totalMonthlyBalance);
 
@@ -71,9 +88,8 @@ public class BankTeller{
             }
 
 
-        }catch(SQLException e){
-            //System.out.println(e);
-            e.printStackTrace();
+        }catch(Exception e){
+            System.out.println(e);
             return "1";
         }
  
@@ -86,7 +102,24 @@ public class BankTeller{
     }
 
     public String listClosedAccounts(){
-        return "0";
+        try{
+            ResultSet closedAccounts = this.executeQ("SELECT a_id " +
+                                                    "FROM Account "+
+                                                    "WHERE isClosed='1' "+
+                                                    "AND EXISTS(SELECT a_id FROM Transaction WHERE (send_id = a_id OR rec_id = a_id) " +
+                                                    "AND EXTRACT(month from t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate))");
+            String[] listOfClosedAcc = this.parseRsAsString(closedAccounts, "a_id");
+            String closedAcc = "List of Closed Accounts: \n";
+            for(String s : listOfClosedAcc){
+                closedAcc += s + '\n';
+            }
+            if(listOfClosedAcc.length == 0)
+                closedAcc += "none\n";
+            return closedAcc;
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return "1";
     }
     public String generateDTER(){
         return "0";
@@ -114,11 +147,9 @@ public class BankTeller{
    
             while(rs.next()){
                 String id = rs.getString(key);
-                System.out.println(id);
                 rsStringOutput.add(id.trim());        
             }
-
-            //rs.beforeFirst();
+            rs.beforeFirst();
             String[] a = new String[rsStringOutput.size()];
             rsStringOutput.toArray(a);
             rs.close();
@@ -143,17 +174,16 @@ public class BankTeller{
             }
             return temp;
         }catch(Exception e){
-            System.out.println("parserD: " + e);
+            System.out.println("parserD: "+ key + " " + e);
         }
         double[] temp = {1.1};
         return temp;
     }
 
-    private String ownsList(ResultSet owners, ResultSet owners1){
-        
+    private String ownsList(ResultSet ownsNames, ResultSet ownsAddress){
         String list = "Owners:\n";
-        String [] names = parseRsAsString(owners, "name");
-        String [] address = parseRsAsString(owners1, "address");
+        String [] names = parseRsAsString(ownsNames, "name");
+        String [] address = parseRsAsString(ownsAddress, "address");
         for(int i=0; i<names.length; i++){
             list += names[i] + " : " + address[i] + "\n";
         }
@@ -161,27 +191,38 @@ public class BankTeller{
         return list;
     }
 
-    private double calculateInitialBalance(ResultSet pos_transactions, ResultSet neg_transactions, double inital){
-        double [] pos = parseRsAsDouble(pos_transactions, "amount");
+    private double calculateInitialBalance(ResultSet posAmount, ResultSet negAmount, double inital){
+        double [] pos = parseRsAsDouble(posAmount, "amount");
         for(double p : pos){
             inital -= p;
         }
-        double [] neg = parseRsAsDouble(neg_transactions, "amount");
+        double [] neg = parseRsAsDouble(negAmount, "amount");
         for(double n : neg){
             inital += n;
         }
         return inital;
     }
-    private String getTransactionList(ResultSet transactions){
+    private String getTransactionList(ResultSet tAmount,ResultSet tDate,ResultSet tType){
         String list = "";
-        String [] types = parseRsAsString(transactions, "a_type");
-        String [] dates = parseRsAsString(transactions, "globaldate");
-        double [] amounts = parseRsAsDouble(transactions, "amount");
+        String [] types = parseRsAsString(tType, "type");
+        String [] dates = parseRsAsString(tDate, "t_date");
+        double [] amounts = parseRsAsDouble(tAmount, "amount");
         for(int i=0;i<types.length;i++){
             list += dates[i] + "\t$" + String.format("%.2f",amounts[i])+ "\t" + types[i] + "\n";
         }
         list+="\n";
         return list;
     }
-
+    public ResultSet executeQ(String query){
+        ResultSet rs = null;
+        try{
+            Statement stmt = this._connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
+            rs = stmt.executeQuery(query);
+        }
+        catch(Exception e){
+            System.out.print("Something went wrong querying the server");
+            e.printStackTrace();
+        }
+        return rs;
+    }
 }

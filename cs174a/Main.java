@@ -94,8 +94,8 @@ public class Main
 			
 			//System.out.println(customer.setPIN("1717","2727"));
 			System.out.println("TESTING>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n");
-			System.out.println(bankTeller.generateMonthlyStatement("taxID"));
-
+			//System.out.println(bankTeller.generateMonthlyStatement("taxID"));
+			System.out.println(bankTeller.listClosedAccounts());
 
 			
 
