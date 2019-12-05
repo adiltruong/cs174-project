@@ -277,7 +277,7 @@ public class BankTeller extends App{
         }catch(Exception e){
             System.out.println("parserD: "+ key + " " + e);
         }
-        double[] temp = {1.1};
+        double[] temp = {1.1111};
         return temp;
     }
 

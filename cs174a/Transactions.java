@@ -369,7 +369,7 @@ public class Transactions extends App{
 				System.out.println("safdiljsfd2");
           		stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(to));
 				stmt.executeQuery("UPDATE Account SET balance = balance -"+fee_amount+" WHERE a_id = "+parse(from));
-				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'wire', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+", NULL)");
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'wire', '"+generateRandomChars(9)+"', "+parse(to)+", "+parse(from)+", NULL)");
 			}
 			System.out.println("safdiljsfd3");
         	closeAccountBalanceCheck(from);
