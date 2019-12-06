@@ -733,7 +733,7 @@ public class App implements Testable
 			else if (r.getInt("isClosed") == 1)
 				return "0 0.00";
 			else
-				return "0 " + r.getString("balance");
+				return "0 " + String.format("%.2f", new Double(r.getString("balance")));
 		}catch (Exception e) {
 			System.out.println("Failed select a_id");
 			System.out.println(e);
