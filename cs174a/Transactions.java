@@ -426,16 +426,7 @@ public class Transactions extends App{
 	}
 
 	public String addInterest() {
-		// try{
-		// 	Statement stmt = _connection.createStatement();
-		// 	// ResultSet rs = executeQuery("SELECT
-		// 	// 					");
-		// //check last day of month
-		// //query for open and type is interest or savings
-		// //
-		// }catch(Exception e){
-		// 	System.out.println("oof you goofed: " + e);
-		// }
+		
 		return "0";
 	}
 

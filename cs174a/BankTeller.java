@@ -254,9 +254,7 @@ public class BankTeller extends App{
     private double intHelper(ResultSet transactions_amounts, ResultSet transactions_days, int sign, int currentMonth){
         double total=0.0;
         double [] amounts = parseRsAsDouble(transactions_amounts, "amount");
-        System.out.print(amounts.length+ "\n");
         double [] days = parseRsAsDouble(transactions_days, "day");
-        System.out.print(days.length+ "\n");
         int year = Integer.parseInt(t.getDate().substring(0,4));
 
         if (year % 4 == 0) {

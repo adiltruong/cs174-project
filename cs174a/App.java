@@ -728,12 +728,15 @@ public class App implements Testable
 					"FROM Account " +
 					"WHERE a_id = " + parse(accountId);
 			ResultSet r = stmt.executeQuery(sql);
+			double res = 0.0;
 			if (!r.next())
 				return "1";
 			else if (r.getInt("isClosed") == 1)
 				return "0 0.00";
 			else
-				return "0 " + r.getString("balance");
+				res = r.getDouble("balance");
+				String ret = String.format("%.2f",res);
+				return "0 " + ret;
 		}catch (Exception e) {
 			System.out.println("Failed select a_id");
 			System.out.println(e);
@@ -1123,7 +1126,7 @@ public class App implements Testable
   		populate_customers("cs174a/inputs/customers.csv");
     	populate_accounts("cs174a/inputs/accounts.csv");
     	populate_owns("cs174a/inputs/owns.csv");
-    	//populate_transactions("cs174a/inputs/transactions.csv");
+    	populate_transactions("cs174a/inputs/transactions.csv");
     	populate_interest("cs174a/inputs/interest.csv");
     	populate_date();
     // 	populate_interest_paid();
@@ -1414,8 +1417,4 @@ public class App implements Testable
     	}
     	return true;
   	}
-
-	//check if accountType is not POCKET
-	//balance Too Low, cant use
-	//
 }
