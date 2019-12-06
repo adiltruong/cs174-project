@@ -118,8 +118,8 @@ public class Main
 			System.out.println();
 			System.out.println("Welcome to Debts R Us! What would you like to do today?");
 			System.out.println();
-			System.out.println("0  ATM interface");
-			System.out.println("1  Bank teller");
+			System.out.println("0 ATM interface");
+			System.out.println("1 Bank teller");
 			System.out.println("2 Set system date");
 			System.out.println("3 Set interest rates");
 			System.out.println("4 Leave bank of debt");
@@ -127,7 +127,6 @@ public class Main
 			int option = myObj.nextInt();
 			String taxID = "";
 			String pin = "";
-
 
 			if (option == 0) { //ATM Interface
 				System.out.println();
@@ -156,13 +155,16 @@ public class Main
 						System.out.println("big oof you goofed, Try again.");
 				}
 				if(rr) {
-					atm_Interface.startATM(myObj, taxID);
+					atm_Interface.startATM(myObj, taxID, true);
 				}
 				
-		 }
-		 
+		 	}
+			if(option == 4){
+				System.out.println("Goodbye...\n");
+				systemOn = false;
+			}
 	//!### FINALIZAMOS
-	}
+		}
 	}
 }
 }

@@ -98,8 +98,8 @@ public class Transactions extends App{
 						System.out.println("Bal Too Low");
 						return "1";
 					}
-					stmt.executeQuery("UPDATE Account SET balance = balance +"+l_amount+" WHERE a_id = "+parse(accountId));
-					stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(linkedId));
+					stmt.executeQuery("UPDATE Account SET balance = balance -"+l_amount+" WHERE a_id = "+parse(accountId));
+					stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(linkedId));
 					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'top-up', '"+generateRandomChars(9)+"', "+parse(linkedId)+", "+parse(accountId)+", NULL)");
 					closeAccountBalanceCheck(accountId);
 				}
@@ -284,8 +284,8 @@ public class Transactions extends App{
           		if(balTooLow(from, amount)){
             		return "1";
           		}
-          		stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(to));
-				stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(from));
+          		stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(to));
+				stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(from));
 				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'transfer', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+", NULL)");
 				closeAccountBalanceCheck(from);
         		closeAccountBalanceCheck(to);
@@ -346,11 +346,11 @@ public class Transactions extends App{
 	public String wire(String from, String to, double amount) {
 		double fee_amount = amount + 0.02*amount;
 		if(checkClosed(from)){
-			System.out.println("From is closed");
+			System.out.println("From account: " + from + " is closed");
 			return "1";
 		}
     	if(checkClosed(to)){
-			System.out.println("To is closed");
+			System.out.println("To account: " + to + " is closed");
 			return "1";
 		}
 
