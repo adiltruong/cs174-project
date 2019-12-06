@@ -89,6 +89,7 @@ public class Main
 
 		boolean systemOn = true;
 		Scanner myObj = new Scanner(System.in);
+		ATM_Interface atm_Interface = new ATM_Interface(app.getConnection());
 
 		while(systemOn) {
 			System.out.println();
@@ -131,62 +132,7 @@ public class Main
 				}
 
 				if(rr) {
-					while (atmON) {
-						Customer cust = new Customer(taxID, app.getConnection());
-						System.out.println("ATM Inferface Options");
-						System.out.println("");
-						System.out.println("0: Deposit");
-						System.out.println("1: Top-Up");
-						System.out.println("2: Withdrawal");
-						System.out.println("3: Purchase");
-						System.out.println("4: Transfer");
-						System.out.println("5: Collect");
-						System.out.println("6: Wire");
-						System.out.println("7: Pay-Friend");
-						System.out.println("8: Set Pin");
-						System.out.println("9: Leave ATM");
-						System.out.println();
-						int input = myObj.nextInt();
-
-						if (input == 0) {
-							System.out.println();
-							System.out.println("Which account would you like to deposit to?");
-							System.out.println();
-							String account = myObj.next();
-							System.out.println();
-							System.out.println("How much would you like to deposit?");
-							System.out.println();
-							double amount = myObj.nextDouble();
-
-						}
-
-						if (input == 8) {
-							System.out.println();
-							System.out.println("Verify PIN first:");
-							System.out.println();
-							String oldPin = myObj.next();
-							if (customer.verifyPIN(oldPin) == "0"){
-								System.out.println("Enter new PIN:");
-								System.out.println();
-								String newPin = myObj.next();
-								customer.setPIN(oldPin, newPin);
-								System.out.println("Success!\n");
-							}else{
-								System.out.println("Invalid PIN...\nReturning to ATM menu...\n");
-							}
-
-
-
-
-						}
-
-						if (input == 9) {
-							System.out.println();
-							System.out.println("Goodbye...");
-							System.out.println();
-							atmON = false;
-						}
-					}
+					atm_Interface.startATM(myObj, taxID);	
 				}
 
 				if(loginTries == 3) {

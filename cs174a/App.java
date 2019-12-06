@@ -1363,7 +1363,7 @@ public class App implements Testable
 			if (rs.next()){
 				if(balTooLow(accountId, amount)){
 					return "1";
-				4}
+				}
 			stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
 			stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'write_check', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL, "+ generateRandomChars(20) +")");
 			closeAccountBalanceCheck(accountId);

@@ -29,7 +29,8 @@ public class Customer{
     public String setPIN(String oldPIN, String newPIN){
         try {
 			Statement stmt = _connection.createStatement();
-			stmt.executeQuery("UPDATE Customer SET pin = '"+newPIN+"' WHERE pin = '"+oldPIN+"' AND taxID = '"+this.taxId+"'");
+            stmt.executeQuery("UPDATE Customer SET pin = '"+newPIN+"' WHERE pin = '"+oldPIN+"' AND taxID = '"+this.taxId+"'");
+            stmt.executeQuery("commit;");
             return "0";
 		} catch(Exception e) {
 			System.out.println("Couldn't update Pin");
