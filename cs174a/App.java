@@ -16,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.text.DecimalFormat;
 
 /**
  * The most important class for your application.
@@ -114,7 +115,6 @@ public class App implements Testable
 				try{
 					String sql = "DROP TABLE " + i + " CASCADE CONSTRAINTS";
 					stmt.executeUpdate(sql);
-					System.out.println("Table " + i + " deleted in given database...");
 				} catch (Exception e){
 					System.out.println("Couldn't drop " + i);
 					System.out.println(e);
@@ -135,7 +135,6 @@ public class App implements Testable
     		Statement statement = _connection.createStatement();
 
     		try {
-    			System.out.println("Creating table GlobalDate");
     			String sql = "CREATE TABLE GlobalDate (" +
     										"globalDate DATE)";
     			statement.executeUpdate(sql);
@@ -146,7 +145,6 @@ public class App implements Testable
     		}
 
     		try {
-    			System.out.println("Creating table Customer");
     			String sql = "CREATE TABLE Customer (" +
     										"name CHAR(64), " +
     										"taxID CHAR(11), " +
@@ -161,7 +159,6 @@ public class App implements Testable
     		} 
 
     		try {
-    			System.out.println("Creating table Account");
     			String sql = "CREATE TABLE Account (" +
     										"a_id CHAR(10), " +
     										"a_type CHAR(32), " +
@@ -173,7 +170,7 @@ public class App implements Testable
     										"PRIMARY KEY (a_id), " +
     										"FOREIGN KEY (primaryOwner) REFERENCES Customer(taxID) ON DELETE CASCADE, " +
     										"FOREIGN KEY (linked_id) REFERENCES Account(a_id) ON DELETE CASCADE, " +
-    										"CONSTRAINT CHK_Balance CHECK (balance >= 0.01), " +
+    										"CONSTRAINT CHK_Balance CHECK (balance >= 0.00), " +
     										"CONSTRAINT CHK_Link CHECK ((a_type = 'POCKET' AND linked_id IS NOT NULL) OR (a_type != 'POCKET' AND linked_id IS NULL)))"; 
     			statement.executeUpdate(sql);
     		} catch (Exception e) {
@@ -183,7 +180,6 @@ public class App implements Testable
     		}
 
     		try {
-    			System.out.println("Creating table Owns");
     			String sql = "CREATE TABLE Owns (" +
     										"taxID CHAR(11), " +
     										"a_id CHAR(10), " +
@@ -198,7 +194,6 @@ public class App implements Testable
     		}
     		
     		try {
-    			System.out.println("Creating table Interest");
     			String sql = "CREATE TABLE Interest (" +
     										"type CHAR(32), " +
     										"int_rate REAL )";
@@ -210,7 +205,6 @@ public class App implements Testable
     		}
 
     		try {
-    			System.out.println("Creating table Transaction");
     			String sql = "CREATE TABLE Transaction (" +
     										"amount REAL, " +
     										"t_date DATE, " +
@@ -231,7 +225,6 @@ public class App implements Testable
     		}
 
 			try {
-    			System.out.println("Creating table InterestPaid");
     			String sql = "CREATE TABLE Interest_Paid (" +
     										"paid INTEGER )";
     			statement.executeUpdate(sql);
@@ -331,9 +324,9 @@ public class App implements Testable
 
 		try {
 
-				Statement stmt = _connection.createStatement();
+				Statement stmt = this._connection.createStatement();
 				try{
-
+				
 					String sqlDate = "DATE'"+s+"'";
 					String sql = "INSERT INTO GlobalDate VALUES ("+sqlDate+")";
 					stmt.executeUpdate(sql);
@@ -357,7 +350,7 @@ public class App implements Testable
 	@Override
 	public String listClosedAccounts()
 	{
-		String s = "0";
+		String s = "0 ";
 		try {
 			Statement stmt = _connection.createStatement();
 
@@ -410,12 +403,10 @@ public class App implements Testable
 	public String createCheckingSavingsAccount( AccountType accountType, String id, double initialBalance, String tin, String name, String address )
 	{
 		if (initialBalance < 1000.0) { 
-			System.out.println("balance too low");
 			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 		}
 
 		if (accountType == AccountType.POCKET ) {
-			System.out.println("Invalid Type");
 			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 		}
 
@@ -424,7 +415,6 @@ public class App implements Testable
 			try { 
 				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Owns WHERE a_id = "+parse(id));
 				if (rs.next()) {
-					System.out.println("Account exists");
 					return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 				}
 				rs.close();
@@ -437,10 +427,8 @@ public class App implements Testable
 				ResultSet ress = stmt.executeQuery("SELECT taxID FROM Customer WHERE taxID = "+parse(tin));
 			
 				if (ress.next()== false) {
-					System.out.println("Customer does not exist");
 					try {
 						if(name == null || address == null) {
-							System.out.println("No values to create customer");
 							return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 						}
 						stmt.executeQuery("INSERT INTO Customer VALUES ("+parse(name)+", "+parse(tin)+", "+parse(address)+", 1717)");
@@ -452,7 +440,6 @@ public class App implements Testable
 				}
 				try {
 					stmt.executeQuery("INSERT INTO Account VALUES ("+parse(id)+", '"+accountType+"', 'CSIL', "+parse(tin)+", 0, NULL, "+initialBalance+")");
-					System.out.println("Account linked to Customer");
 				} catch(Exception e) {
 					System.out.println("Couldn't add to Account");
 					System.out.println(e);
@@ -501,7 +488,6 @@ public class App implements Testable
 			try { //check if acc exists
 				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Owns WHERE a_id = "+parse(id));
 				if (rs.next()) {
-					System.out.println("Account exists");
 					return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
 				}
 				rs.close();
@@ -513,7 +499,6 @@ public class App implements Testable
 			try { //check if acc exists
 				ResultSet rs = stmt.executeQuery("SELECT * FROM Account WHERE a_id = "+parse(linkedId));
 				if (rs.next()) {
-					System.out.println("linkedAccount exists");
 					linkedIdExists = true;
 					closed = rs.getInt("isClosed");
 					linkedBalance = rs.getDouble("balance");
@@ -538,7 +523,6 @@ public class App implements Testable
 
 			try {
 				stmt.executeQuery("INSERT INTO Account VALUES ("+parse(id)+", 'POCKET', 'CSIL', "+parse(tin)+", 0, "+parse(linkedId)+", "+initialTopUp+")");
-				System.out.println("Inserted to Account");
 			} catch(Exception e) {
 				System.out.println("Couldn't add to Account");
 				System.out.println(e);
@@ -585,7 +569,6 @@ public class App implements Testable
 			try {
 				ResultSet rs = stmt.executeQuery("SELECT taxID FROM Customer WHERE taxID = "+parse(tin));
 				if(rs.next()) {
-					System.out.println("Customer exists already");
 					return "1";
 				}
 				rs.close();
@@ -598,7 +581,6 @@ public class App implements Testable
 			try {
 				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
 				if (rs.next()){
-					System.out.println("account type invalid");
 					return "1";
 				}
 				rs.close();
@@ -611,7 +593,6 @@ public class App implements Testable
 			try {
 				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId));
 				if(!rs.next()) {
-					System.out.println("Account doesn't exist");
 					return "1";
 				}
 				rs.close();
@@ -661,7 +642,6 @@ public class App implements Testable
 		double newBal = 0.0;
 		
 		if (checkClosed(accountId)) {
-			System.out.println("account is closed");
 			return "1";
 		}
 		try {
@@ -669,7 +649,6 @@ public class App implements Testable
 			try {
 				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
 				if (rs.next()){
-					System.out.println("account type invalid");
 					return "1";
 				}
 				rs.close();
@@ -733,12 +712,15 @@ public class App implements Testable
 					"FROM Account " +
 					"WHERE a_id = " + parse(accountId);
 			ResultSet r = stmt.executeQuery(sql);
+			double s = 0.0;
 			if (!r.next())
 				return "1";
 			else if (r.getInt("isClosed") == 1)
 				return "0 0.00";
 			else
-				return "0 " + r.getString("balance");
+				s = r.getDouble("balance");
+        		DecimalFormat df = new DecimalFormat("#.##");
+				return "0 " + df.format(s);
 		}catch (Exception e) {
 			System.out.println("Failed select a_id");
 			System.out.println(e);
@@ -778,7 +760,6 @@ public class App implements Testable
 				if (rs.next()) {
 					linkedId = rs.getString("linked_id");
 					if (balTooLow(linkedId, l_amount)){
-						System.out.println("Bal Too Low");
 						return "1";
 					}
 					stmt.executeQuery("UPDATE Account SET balance = balance +"+l_amount+" WHERE a_id = "+parse(accountId));
@@ -844,11 +825,9 @@ public class App implements Testable
 		//to balance = balance + amount
 
 		if(checkClosed(from)){
-			System.out.println("From is closed");
 			return "1";
 		}
     	if(checkClosed(to)){
-			System.out.println("To is closed");
 			return "1";
 		}
 
@@ -888,7 +867,6 @@ public class App implements Testable
 			try {
 				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
 				if (rs.next()){
-					System.out.println("account type invalid");
 					return "1";
 				}
 				rs.close();
@@ -958,11 +936,9 @@ public class App implements Testable
 		}
 
 		if(checkClosed(from)){
-			System.out.println("From is closed");
 			return "1";
 		}
     	if(checkClosed(to)){
-			System.out.println("To is closed");
 			return "1";
 		}
 
@@ -1015,7 +991,6 @@ public class App implements Testable
 				if (rs.next()) {
 					linkedId = rs.getString("linked_id");
 					if (balTooLow(accountId, p_amount)){
-						System.out.println("Bal Too Low");
 						return "1";
 					}
 					stmt.executeQuery("UPDATE Account SET balance = balance -"+p_amount+" WHERE a_id = "+parse(accountId));
@@ -1041,11 +1016,9 @@ public class App implements Testable
 	public String wire(String from, String to, double amount) {
 		double fee_amount = amount + 0.02*amount;
 		if(checkClosed(from)){
-			System.out.println("From is closed");
 			return "1";
 		}
     	if(checkClosed(to)){
-			System.out.println("To is closed");
 			return "1";
 		}
 
@@ -1078,7 +1051,6 @@ public class App implements Testable
 			try {
 					ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND (a_type = 'POCKET' OR a_type = 'SAVINGS')");
 					if (rs.next()){
-						System.out.println("account type invalid");
 						return "1";
 					}
 					rs.close();
@@ -1304,7 +1276,6 @@ public class App implements Testable
       		
 			if(rs.next()) {
 				String date = rs.getString("Recent Date");
-        		System.out.println(date);
 				rs.close();
         		return date;
 			}
@@ -1426,7 +1397,4 @@ public class App implements Testable
     	}
     	return true;
   	}
-	//check if accountType is not POCKET
-	//balance Too Low, cant use
-	//
 }

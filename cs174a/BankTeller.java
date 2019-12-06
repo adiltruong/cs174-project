@@ -9,7 +9,7 @@ import cs174a.Transactions;
 public class BankTeller extends App{
     private OracleConnection _connection;
     //Statement stmt; 
-    
+    App app = new App();
     Transactions t;
     private int [] daysInMonthRegular = {31,28,31,30,31,30,31,31,30,31,30,31};
     private int [] daysInMonthLeap = {31,29,31,30,31,30,31,31,30,31,30,31};
@@ -23,8 +23,11 @@ public class BankTeller extends App{
         this.t.writeCheck(accountID, amount);
         return "0";
     }
-    
+
     public String generateMonthlyStatement(String taxID){
+        // if (!isLastDay()){
+        //     return "1";
+        // }
         String statement = "";
         double totalMonthlyBalance = 0.00;
         try{
@@ -32,7 +35,6 @@ public class BankTeller extends App{
                             "FROM Account " +
                             "WHERE primaryOwner = '" + taxID + "'");
             String [] account = parseRsAsString(rs, "a_id");
-            System.out.println(account[0]);
             rs = this.executeQ("SELECT a_id, balance "+ 
                             "FROM Account " +
                             "WHERE primaryOwner = '" + taxID + "'");
@@ -72,7 +74,6 @@ public class BankTeller extends App{
                                                                     "WHERE send_id='"+account[i]+"' "+
                                                                     "AND EXTRACT(month from t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate)");
                 double inital = calculateInitialBalance(posTransAmount, negTransAmount, balance[i]);
-                System.out.println(inital);
                 statement+= String.format("Initial Balance: $%.2f \n", inital);
                 posTransAmount = this.executeQ("SELECT amount " +
                                                                     "FROM Transaction "+
@@ -128,22 +129,28 @@ public class BankTeller extends App{
         return "1";
     }
 
-    public String generateDTER(){
+   public String generateDTER(){
+    //    if (!isLastDay()){
+    //         return "1";
+    //     }
         try{
             String dter = "Government Drug and Tax Evasion Report:\n";
-            ResultSet customers = this.executeQ("SELECT C.taxID " +
-                                        "FROM Customer C " +
+            ResultSet customers = this.executeQ("SELECT O.taxID " +
+                                        "FROM Owns O " +
                                         "WHERE (SELECT sum(T.amount) " +
                                             "FROM Transaction T " +
-                                            "WHERE C.taxID = T.rec_id " +
+                                            "WHERE O.a_id = T.rec_id " +
                                                     "AND EXTRACT(month FROM t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) " +
                                                                                            "FROM GlobalDate)) > 10000");
             String [] dterID = parseRsAsString(customers, "taxID");
             if(dterID.length == 0)
                 return dter + "No accounts found\n";
             else{
+                String temp = "";
                 for(String s : dterID){
-                    dter += s + '\n';
+                    if (!temp.equals(s)) 
+                        dter += "ID: " + s + '\n';
+                    temp = s;
                 }
             }
             return dter;
@@ -177,10 +184,15 @@ public class BankTeller extends App{
         }
         return "0";
     }
+
     public String addInterest(){
-        if (!isLastDay()){
-            return "1";
-        }
+        // if (!isLastDay()){
+        //     return "1";
+        // }
+
+        // if (interestPaid()){
+        //     return "1";
+        // }
 
         ResultSet openAcc_id = this.executeQ("SELECT a_id "+
                                                     "FROM Account "+
@@ -197,6 +209,7 @@ public class BankTeller extends App{
         double [] balances = parseRsAsDouble(openAcc_bal, "balance");
         String [] types = parseRsAsString(openAcc_type, "a_type");
 
+
         if (openAccounts.length < 1) {
             return "1";
         }
@@ -208,6 +221,7 @@ public class BankTeller extends App{
 
         String [] type = parseRsAsString(interest_type, "type");
         double [] rate = parseRsAsDouble(interest_rate, "int_rate");
+
         Map<String, Double> monthlyRates = new HashMap<String, Double>();
 
         for(int i=0; i<type.length; i++){
@@ -215,25 +229,78 @@ public class BankTeller extends App{
         }
 
         for(int i=0;i<openAccounts.length;i++){
-            double interest = t.accrueInterest(openAccounts[i], balances[i], monthlyRates.get(types[i]));
+            double interest = accrueInterest(openAccounts[i], balances[i], monthlyRates.get(types[i]));
+            
             String str = String.format("%1.2f", interest);
             interest = Double.valueOf(str);
+            
 
             if(interest > 0){
                 this.executeQ("UPDATE Account SET balance = balance + "+interest+" WHERE a_id = '"+openAccounts[i]+"'");
-                this.executeQ("INSERT INTO Transaction VALUES ( "+interest+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'accrue-interest', '"+generateRandomChars(9)+"', NULL,'"+openAccounts[i]+"', NULL)");
+                this.executeQ("INSERT INTO Transaction VALUES ( "+interest+", TO_DATE('"+t.getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'accrue-interest', '"+generateRandomChars(9)+"', '"+openAccounts[i]+"', NULL, NULL)");
             }
+
         }
 
+        this.executeQ("UPDATE Interest_Paid SET paid = 1 WHERE paid = 0");
         return "0";
     }
 
+    public double accrueInterest(String a_id, double endBalance, double monthlyRate) {
+        ResultSet pos_transactions_days = this.executeQ("SELECT EXTRACT(DAY FROM t_date) AS day FROM Transaction WHERE rec_id = '"+a_id+"' AND EXTRACT(MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH FROM GlobalDate)) FROM GlobalDate)");
+        ResultSet pos_transactions_amounts = this.executeQ("SELECT AMOUNT FROM Transaction WHERE rec_id = '"+a_id+"' AND EXTRACT( MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH from globalDate)) FROM GlobalDate)");
+        ResultSet neg_transactions_days = this.executeQ("SELECT EXTRACT(DAY FROM t_date) AS day FROM Transaction WHERE send_id = '"+a_id+"' AND EXTRACT(MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH FROM GlobalDate)) FROM GlobalDate)");
+        ResultSet neg_transactions_amounts = this.executeQ("SELECT AMOUNT FROM Transaction WHERE send_id = '"+a_id+"' AND EXTRACT( MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH from globalDate)) FROM GlobalDate)");
+        double initial = calculateInitialBalance(pos_transactions_amounts, neg_transactions_amounts, endBalance);
 
+        int currentMonth = Integer.parseInt(t.getDate().substring(5,7));
+        int year = Integer.parseInt(t.getDate().substring(0,4));
+        if(year % 4==0) {
+            double total = 0.0;
+            total+=intHelper(pos_transactions_amounts, pos_transactions_days, 1, currentMonth);
+            total+=intHelper(neg_transactions_amounts, neg_transactions_days, -1, currentMonth);
+            total+=initial*daysInMonthLeap[currentMonth-1];
+            return total*(monthlyRate/100.0)/daysInMonthLeap[currentMonth-1];
+        }
+
+        else {
+            double total = 0.0;
+            total+=intHelper(pos_transactions_amounts, pos_transactions_days, 1, currentMonth);
+            total+=intHelper(neg_transactions_amounts, neg_transactions_days, -1, currentMonth);
+            total+=initial*daysInMonthRegular[currentMonth-1];
+            return total*(monthlyRate/100.0)/daysInMonthRegular[currentMonth-1];
+        }
+
+    }
+    public double intHelper(ResultSet transactions_amounts, ResultSet transactions_days, int sign, int currentMonth){
+        double total=0.0;
+        double [] amounts = parseRsAsDouble(transactions_amounts, "amount");
+        double [] days = parseRsAsDouble(transactions_days, "day");
+        int year = Integer.parseInt(t.getDate().substring(0,4));
+		if (year % 4 == 0) {
+				for(int i=0;i<amounts.length;i++){
+
+					total+=sign*amounts[i]*(daysInMonthLeap[currentMonth-1] - days[i]);
+
+				}
+		} else {
+				for(int i=0;i<amounts.length;i++){
+					total+=sign*amounts[i]*(daysInMonthRegular[currentMonth-1] - days[i]);
+
+				}
+		}
+        return total;
+
+
+    }
     public String createAccount(AccountType accountType, String id, double initialBalance, String tin, String name, String address){//use app to make specific accounts/new customers
         this.createCheckingSavingsAccount(accountType, id, initialBalance, tin, name, address);
         return "0";
     }
     public String deleteClosedAccountsCustomers(){
+        // if (!isLastDay()){
+        //     return "1";
+        // }
         try{
             this.executeQ("DELETE FROM Account " + 
                           "WHERE isClosed = 1 ");
@@ -250,13 +317,16 @@ public class BankTeller extends App{
         return "1";
     }
     public String deleteTransactions(){
+        // if (!isLastDay()){
+        //     return "1";
+        // }
         try {
             this.executeQ("DELETE FROM Transaction");
+            return "0";
         } catch (Exception e) {
             e.printStackTrace();
-            return "0";
+            return "1";
         }
-        return "1";
     }
 
     //helper functions
@@ -369,4 +439,135 @@ public class BankTeller extends App{
         }
     }
 
+    public boolean interestPaid() {
+        try {
+            ResultSet rs = this.executeQ("SELECT * FROM Interest_Paid");
+            int paid = rs.getInt("paid");
+            return (paid == 1);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return false;
+    }
+
+    public String setDateQ(int year, int month, int day) {
+        try {
+            ResultSet rMonth = this.executeQ("SELECT MAX(EXTRACT(MONTH from globalDate)) AS \"month\" "+
+                                            "FROM GlobalDate");
+            ResultSet rYear = this.executeQ("SELECT MAX(EXTRACT(YEAR from globalDate)) AS \"year\""+
+                                            "FROM GlobalDate");
+            
+            if (rMonth.next() && rYear.next()) {
+                int qMonth = rMonth.getInt("month");
+                int qYear = rYear.getInt("year");
+                if (qYear%4 == 0){
+                    if (qMonth < month || qYear < year){
+                        return setDateB(qYear, qMonth, daysInMonthLeap[qMonth-1]);
+                    }
+                }
+                else {
+                    if (qMonth < month || qYear < year){
+                        System.out.println(daysInMonthRegular[qMonth-1]);
+                        return setDateB(qYear, qMonth, daysInMonthRegular[qMonth-1]);
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return "1";
+    }
+
+    public String setDateB( int year, int month, int day ){
+		String sYear = Integer.toString(year);
+		String sMonth = Integer.toString(month);
+		String sDay = Integer.toString(day);
+
+		if(sMonth.length() < 2) {
+			sMonth = "0" + sMonth;
+		}
+		if (sDay.length() < 2) {
+			sDay = "0" + sDay;
+		}
+		String s = sYear + "-" + sMonth + "-" + sDay;
+		if(sYear.length() != 4) { //wrong year format
+			System.out.println("Invalid Year");
+			return "1 "+s;
+		} 
+
+		else if (month < 1 || month > 12) {
+			System.out.println("Invalid Month");
+			return "1 "+s;
+		}
+
+		else if (day < 1 || day >31) {
+            System.out.println("Invalid Day");
+			return "1 " +s;
+        }
+
+		else {
+			if (month == 2 && year%4 ==0) {
+				if (day > 29){
+					System.out.println("Invalid Day Feb Leap Year");
+					return "1 "+s;
+				}
+			}
+
+			else if (month == 2) {
+				if (day > 28) {
+					System.out.println("Invalid Day Feb Not Leap Year");
+					return "1 "+s;
+				}
+			}
+
+			else if (month == 4) {
+				if (day > 30) {
+					System.out.println("Invalid Day April");
+					return "1 "+s;
+				}
+			}
+
+			else if (month == 6) {
+				if (day > 30) {
+					System.out.println("Invalid Day June");
+					return "1 "+s;
+				}
+			}
+
+			else if (month == 9) {
+				if (day > 30) {
+					System.out.println("Invalid Day June");
+					return "1 "+s;
+				}
+			}
+
+			else if (month == 11) {
+				if (day >30) {
+					System.out.println("Invalid Day Novemember");
+					return "1 "+s;
+				}
+			}
+		}
+
+		try {
+
+				Statement stmt = _connection.createStatement();
+				try{
+				
+					String sqlDate = "DATE'"+s+"'";
+					String sql = "INSERT INTO GlobalDate VALUES ("+sqlDate+")";
+					stmt.executeUpdate(sql);
+
+				} catch(Exception e) {
+					System.out.println("Failed to write in GlobalDate.");
+					System.out.println(e);
+				}
+			} catch (Exception e) {
+				System.out.println("Failed to connect to DB.");
+				System.out.println(e);
+			}
+
+		return "0 " + s;
+	}
 }

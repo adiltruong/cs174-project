@@ -1,2 +1,5 @@
 Adil Truong 3951795
 Nathan Guan 3954393
+
+javac -d out/ -cp cs174a/ojdbc8.jar cs174a/*.java 
+java -cp cs174a/ojdbc8.jar:out:. cs174a.Main

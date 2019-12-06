@@ -22,7 +22,6 @@ public class Transactions extends App{
 		double newBal = 0.0;
 		
 		if (checkClosed(accountId)) {
-			System.out.println("account is closed");
 			return "1";
 		}
 		try {
@@ -31,7 +30,6 @@ public class Transactions extends App{
 			try {
 				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'Pocket'");
 				if (rs.next()){
-					System.out.println("account type invalid");
 					return "1";
 				}
 				rs.close();
@@ -98,7 +96,6 @@ public class Transactions extends App{
 				if (rs.next()) {
 					linkedId = rs.getString("linked_id");
 					if (balTooLow(linkedId, l_amount)){
-						System.out.println("Bal Too Low");
 						return "1";
 					}
 					stmt.executeQuery("UPDATE Account SET balance = balance +"+l_amount+" WHERE a_id = "+parse(accountId));
@@ -150,11 +147,9 @@ public class Transactions extends App{
 		//to balance = balance + amount
 
 		if(checkClosed(from)){
-			System.out.println("From is closed");
 			return "1";
 		}
     	if(checkClosed(to)){
-			System.out.println("To is closed");
 			return "1";
 		}
 
@@ -195,7 +190,6 @@ public class Transactions extends App{
 			try {
 				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'Pocket'");
 				if (rs.next()){
-					System.out.println("account type invalid");
 					return "1";
 				}
 				rs.close();
@@ -265,11 +259,9 @@ public class Transactions extends App{
 		}
 
 		if(checkClosed(from)){
-			System.out.println("From is closed");
 			return "1";
 		}
     	if(checkClosed(to)){
-			System.out.println("To is closed");
 			return "1";
 		}
 
@@ -323,7 +315,6 @@ public class Transactions extends App{
 				if (rs.next()) {
 					linkedId = rs.getString("linked_id");
 					if (balTooLow(accountId, p_amount)){
-						System.out.println("Bal Too Low");
 						return "1";
 					}
 					stmt.executeQuery("UPDATE Account SET balance = balance -"+p_amount+" WHERE a_id = "+parse(accountId));
@@ -349,11 +340,9 @@ public class Transactions extends App{
 	public String wire(String from, String to, double amount) {
 		double fee_amount = amount + 0.02*amount;
 		if(checkClosed(from)){
-			System.out.println("From is closed");
 			return "1";
 		}
     	if(checkClosed(to)){
-			System.out.println("To is closed");
 			return "1";
 		}
 
@@ -391,7 +380,6 @@ public class Transactions extends App{
 			try {
 					ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND (a_type = 'Pocket' OR a_type = 'SAVINGS')");
 					if (rs.next()){
-						System.out.println("account type invalid");
 						return "1";
 					}
 					rs.close();
@@ -451,29 +439,26 @@ public class Transactions extends App{
         }
     }
 
-    private double intHelper(ResultSet transactions_amounts, ResultSet transactions_days, int sign, int currentMonth){
+    public double intHelper(ResultSet transactions_amounts, ResultSet transactions_days, int sign, int currentMonth){
         double total=0.0;
         double [] amounts = parseRsAsDouble(transactions_amounts, "amount");
         double [] days = parseRsAsDouble(transactions_days, "day");
         int year = Integer.parseInt(getDate().substring(0,4));
+		if (year % 4 == 0) {
+				for(int i=0;i<amounts.length;i++){
 
-        if (year % 4 == 0) {
-            for(int i=0;i<amounts.length;i++){
+					total+=sign*amounts[i]*(daysInMonthLeap[currentMonth-1] - days[i]);
 
-                total+=sign*amounts[i]*(daysInMonthLeap[currentMonth-1] - days[i]);
+				}
+		} else {
+				for(int i=0;i<amounts.length;i++){
 
-            }
-        } else {
-            for(int i=0;i<amounts.length;i++){
+					total+=sign*amounts[i]*(daysInMonthRegular[currentMonth-1] - days[i]);
 
-                total+=sign*amounts[i]*(daysInMonthRegular[currentMonth-1] - days[i]);
-
-            }
-        }
+				}
+		}
         return total;
     }
-
-
 
     //helper functions
 
@@ -515,59 +500,50 @@ public class Transactions extends App{
 		}
 		String s = sYear + "-" + sMonth + "-" + sDay;
 		if(sYear.length() != 4) { //wrong year format
-			System.out.println("Invalid Year");
 			return "1 "+s;
 		} 
 
 		else if (month < 1 || month > 12) {
-			System.out.println("Invalid Month");
 			return "1 "+s;
 		}
 
 		else if (day < 1 || day >31) {
-			System.out.println("Invalid Day");
 			return "1 " +s;
 		}
 
 		else {
 			if (month == 2 && year%4 ==0) {
 				if (day > 29){
-					System.out.println("Invalid Day Feb Leap Year");
 					return "1 "+s;
 				}
 			}
 
 			else if (month == 2) {
 				if (day > 28) {
-					System.out.println("Invalid Day Feb Not Leap Year");
 					return "1 "+s;
 				}
 			}
 
 			else if (month == 4) {
 				if (day > 30) {
-					System.out.println("Invalid Day April");
 					return "1 "+s;
 				}
 			}
 
 			else if (month == 6) {
 				if (day > 30) {
-					System.out.println("Invalid Day June");
 					return "1 "+s;
 				}
 			}
 
 			else if (month == 9) {
 				if (day > 30) {
-					System.out.println("Invalid Day June");
 					return "1 "+s;
 				}
 			}
 
 			else if (month == 11) {
 				if (day >30) {
-					System.out.println("Invalid Day Novemember");
 					return "1 "+s;
 				}
 			}
@@ -576,7 +552,6 @@ public class Transactions extends App{
 		try {
 
 				Statement stmt = _connection.createStatement();
-				System.out.println("Writing to table GlobalDate");
 				try{
 
 					String sqlDate = "DATE'"+s+"'";
@@ -615,7 +590,6 @@ public class Transactions extends App{
 	  public String setInterestRate(AccountType accountType, double rate)
 	{
 		if (accountType == AccountType.POCKET || accountType == AccountType.STUDENT_CHECKING) {
-			System.out.println("Can't switch interest rate by type");
 			return "Type issue";
 		}
 
@@ -760,4 +734,5 @@ public class Transactions extends App{
         double[] temp = {1.1};
         return temp;
     }
+
 }
