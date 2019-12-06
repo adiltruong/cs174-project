@@ -31,6 +31,7 @@ public class BankTeller extends App{
                             "FROM Account " +
                             "WHERE primaryOwner = '" + taxID + "'");
             String [] account = parseRsAsString(rs, "a_id");
+            System.out.println(account[0]);
             rs = this.executeQ("SELECT a_id, balance "+ 
                             "FROM Account " +
                             "WHERE primaryOwner = '" + taxID + "'");
@@ -70,6 +71,7 @@ public class BankTeller extends App{
                                                                     "WHERE send_id='"+account[i]+"' "+
                                                                     "AND EXTRACT(month from t_date) = (SELECT MAX(EXTRACT(month FROM globaldate)) FROM GlobalDate)");
                 double inital = calculateInitialBalance(posTransAmount, negTransAmount, balance[i]);
+                System.out.println(inital);
                 statement+= String.format("Initial Balance: $%.2f \n", inital);
                 posTransAmount = this.executeQ("SELECT amount " +
                                                                     "FROM Transaction "+
@@ -211,10 +213,10 @@ public class BankTeller extends App{
             monthlyRates.put(type[i], rate[i]/12.0);
         }
 
-        System.out.println(monthlyRates.get(type[0]));
         for(int i=0;i<openAccounts.length;i++){
-
-            double interest = accrueInterest(openAccounts[i], balances[i], monthlyRates.get(types[i]));
+            double interest = t.accrueInterest(openAccounts[i], balances[i], monthlyRates.get(types[i]));
+            String str = String.format("%1.2f", interest);
+            interest = Double.valueOf(str);
 
             if(interest > 0){
                 this.executeQ("UPDATE Account SET balance = balance + "+interest+" WHERE a_id = '"+openAccounts[i]+"'");
@@ -223,56 +225,6 @@ public class BankTeller extends App{
         }
 
         return "0";
-    }
-
-    public double accrueInterest(String a_id, double endBalance, double monthlyRate) {
-        ResultSet pos_transactions_days = this.executeQ("SELECT EXTRACT(DAY FROM t_date) AS day FROM Transaction WHERE rec_id = '"+a_id+"' AND EXTRACT(MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH FROM GlobalDate)) FROM GlobalDate)");
-        ResultSet pos_transactions_amounts = this.executeQ("SELECT AMOUNT FROM Transaction WHERE rec_id = '"+a_id+"' AND EXTRACT( MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH from globalDate)) FROM GlobalDate)");
-        ResultSet neg_transactions_days = this.executeQ("SELECT EXTRACT(DAY FROM t_date) AS day FROM Transaction WHERE send_id = '"+a_id+"' AND EXTRACT(MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH FROM GlobalDate)) FROM GlobalDate)");
-        ResultSet neg_transactions_amounts = this.executeQ("SELECT AMOUNT FROM Transaction WHERE send_id = '"+a_id+"' AND EXTRACT( MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH from globalDate)) FROM GlobalDate)");
-        double initial = calculateInitialBalance(pos_transactions_amounts, neg_transactions_amounts, endBalance);
-        int currentMonth = Integer.parseInt(t.getDate().substring(5,7));
-        int year = Integer.parseInt(t.getDate().substring(0,4));
-
-        if(year % 4==0) {
-            double total = 0.0;
-            total+=intHelper(pos_transactions_amounts, pos_transactions_days, 1, currentMonth);
-            total+=intHelper(neg_transactions_amounts, neg_transactions_days, -1, currentMonth);
-            total+=initial*daysInMonthLeap[currentMonth-1];
-            return total*(monthlyRate/100.0)/daysInMonthLeap[currentMonth-1];
-        }
-
-        else {
-            double total = 0.0;
-            total+=intHelper(pos_transactions_amounts, pos_transactions_days, 1, currentMonth);
-            total+=intHelper(neg_transactions_amounts, neg_transactions_days, -1, currentMonth);
-            total+=initial*daysInMonthRegular[currentMonth-1];
-            return total*(monthlyRate/100.0)/daysInMonthRegular[currentMonth-1];
-        }
-    }
-
-    private double intHelper(ResultSet transactions_amounts, ResultSet transactions_days, int sign, int currentMonth){
-        double total=0.0;
-        double [] amounts = parseRsAsDouble(transactions_amounts, "amount");
-        System.out.print(amounts.length+ "\n");
-        double [] days = parseRsAsDouble(transactions_days, "day");
-        System.out.print(days.length+ "\n");
-        int year = Integer.parseInt(t.getDate().substring(0,4));
-
-        if (year % 4 == 0) {
-            for(int i=0;i<amounts.length;i++){
-
-                total+=sign*amounts[i]*(daysInMonthLeap[currentMonth-1] - days[i]);
-
-            }
-        } else {
-            for(int i=0;i<amounts.length;i++){
-
-                total+=sign*amounts[i]*(daysInMonthRegular[currentMonth-1] - days[i]);
-
-            }
-        }
-        return total;
     }
 
 
@@ -297,7 +249,13 @@ public class BankTeller extends App{
         return "1";
     }
     public String deleteTransactions(){
-        return "0 Deleted all transactions...";
+        try {
+            this.executeQ("DELETE FROM Transaction");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "0";
+        }
+        return "1";
     }
 
     //helper functions
@@ -327,7 +285,7 @@ public class BankTeller extends App{
                 Double id = rs.getDouble(key);
                 rsDoubleOutput.add(id);
             }
-            //rs.beforeFirst();
+            rs.beforeFirst();
             double[] temp = new double[rsDoubleOutput.size()];
             for (int i = 0; i < temp.length; i++) {
                 temp[i] = rsDoubleOutput.get(i);
@@ -351,7 +309,7 @@ public class BankTeller extends App{
         return list;
     }
 
-    private double calculateInitialBalance(ResultSet posAmount, ResultSet negAmount, double inital){
+    public double calculateInitialBalance(ResultSet posAmount, ResultSet negAmount, double inital){
         double [] pos = parseRsAsDouble(posAmount, "amount");
         for(double p : pos){
             inital -= p;
@@ -373,6 +331,7 @@ public class BankTeller extends App{
         list+="\n";
         return list;
     }
+
     public ResultSet executeQ(String query){
         ResultSet rs = null;
         try{

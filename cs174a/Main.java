@@ -35,8 +35,6 @@ public class Main
 			System.out.println(r);
 
 			// Example tests.  We'll overwrite your Main.main() function with our final tests.
-			r = app.listClosedAccounts();
-			System.out.println( r );
 
 			// Another example test.
 			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "account1", 1234.56, "theTaxID", "Im YoungMing", "Known" );
@@ -94,8 +92,8 @@ public class Main
 			
 			//System.out.println(customer.setPIN("1717","2727"));
 			System.out.println("TESTING>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n");
-			//System.out.println(bankTeller.generateMonthlyStatement("taxID"));
-			//System.out.println(bankTeller.listClosedAccounts());
+			System.out.println(bankTeller.generateMonthlyStatement("taxID"));
+			System.out.println(bankTeller.listClosedAccounts());
 			r = app.showBalance("account3");
 			System.out.println("BALANCE for 3:" + r);
 			r = app.showBalance("account5");
@@ -107,9 +105,7 @@ public class Main
 			r = app.showBalance("account3");
 			System.out.println("BALANCE for 3:" + r);
 			System.out.println("Wire: " + r);
-			System.out.println(bankTeller.generateDTER());
-
-			System.out.println(bankTeller.addInterest());
+			//System.out.println(bankTeller.generateMonthlyStatement("account5"));
 			
 
 		boolean systemOn = true;

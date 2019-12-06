@@ -12,6 +12,9 @@ public class Transactions extends App{
     public Transactions(OracleConnection _connection){
         this._connection = _connection;
     }
+
+	private int [] daysInMonthRegular = {31,28,31,30,31,30,31,31,30,31,30,31};
+    private int [] daysInMonthLeap = {31,29,31,30,31,30,31,31,30,31,30,31};
     //functions
     public String deposit(String accountId, double amount){
         //in app.java
@@ -406,11 +409,8 @@ public class Transactions extends App{
 				if(balTooLow(accountId, amount)){
 					return "1";
 				}
-				System.out.println("ouhasfuha");
 				stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
-				System.out.println("ouhasfuha");
-				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'write_check', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL, '" + generateRandomChars(20) + "')");
-				System.out.println("ouhasfuha");
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'write_check', '"+generateRandomChars(9)+"', NULL, "+parse(accountId)+", '" + generateRandomChars(20) + "')");
 				closeAccountBalanceCheck(accountId);
 			}
 		
@@ -425,22 +425,86 @@ public class Transactions extends App{
 		return "0";
 	}
 
-	public String addInterest() {
-		// try{
-		// 	Statement stmt = _connection.createStatement();
-		// 	// ResultSet rs = executeQuery("SELECT
-		// 	// 					");
-		// //check last day of month
-		// //query for open and type is interest or savings
-		// //
-		// }catch(Exception e){
-		// 	System.out.println("oof you goofed: " + e);
-		// }
-		return "0";
-	}
+	public double accrueInterest(String a_id, double endBalance, double monthlyRate) {
+        ResultSet pos_transactions_days = this.executeQ("SELECT EXTRACT(DAY FROM t_date) AS day FROM Transaction WHERE rec_id = '"+a_id+"' AND EXTRACT(MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH FROM GlobalDate)) FROM GlobalDate)");
+        ResultSet pos_transactions_amounts = this.executeQ("SELECT AMOUNT FROM Transaction WHERE rec_id = '"+a_id+"' AND EXTRACT( MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH from globalDate)) FROM GlobalDate)");
+        ResultSet neg_transactions_days = this.executeQ("SELECT EXTRACT(DAY FROM t_date) AS day FROM Transaction WHERE send_id = '"+a_id+"' AND EXTRACT(MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH FROM GlobalDate)) FROM GlobalDate)");
+        ResultSet neg_transactions_amounts = this.executeQ("SELECT AMOUNT FROM Transaction WHERE send_id = '"+a_id+"' AND EXTRACT( MONTH FROM t_date) = (SELECT MAX(EXTRACT(MONTH from globalDate)) FROM GlobalDate)");
+        double initial = calculateInitialBalance(pos_transactions_amounts, neg_transactions_amounts, endBalance);
+
+        int currentMonth = Integer.parseInt(getDate().substring(5,7));
+        int year = Integer.parseInt(getDate().substring(0,4));
+
+
+
+        if(year % 4==0) {
+            double total = 0.0;
+            total+=intHelper(pos_transactions_amounts, pos_transactions_days, 1, currentMonth);
+            total+=intHelper(neg_transactions_amounts, neg_transactions_days, -1, currentMonth);
+            total+=initial*daysInMonthLeap[currentMonth-1];
+            return total*(monthlyRate/100.0)/daysInMonthLeap[currentMonth-1];
+        }
+
+        else {
+            double total = 0.0;
+            total+=intHelper(pos_transactions_amounts, pos_transactions_days, 1, currentMonth);
+            total+=intHelper(neg_transactions_amounts, neg_transactions_days, -1, currentMonth);
+            total+=initial*daysInMonthRegular[currentMonth-1];
+            return total*(monthlyRate/100.0)/daysInMonthRegular[currentMonth-1];
+        }
+    }
+
+    private double intHelper(ResultSet transactions_amounts, ResultSet transactions_days, int sign, int currentMonth){
+        double total=0.0;
+        double [] amounts = parseRsAsDouble(transactions_amounts, "amount");
+        double [] days = parseRsAsDouble(transactions_days, "day");
+        int year = Integer.parseInt(getDate().substring(0,4));
+
+        if (year % 4 == 0) {
+            for(int i=0;i<amounts.length;i++){
+
+                total+=sign*amounts[i]*(daysInMonthLeap[currentMonth-1] - days[i]);
+
+            }
+        } else {
+            for(int i=0;i<amounts.length;i++){
+
+                total+=sign*amounts[i]*(daysInMonthRegular[currentMonth-1] - days[i]);
+
+            }
+        }
+        return total;
+    }
+
 
 
     //helper functions
+
+	public double calculateInitialBalance(ResultSet posAmount, ResultSet negAmount, double inital){
+        double [] pos = parseRsAsDouble(posAmount, "amount");
+        for(double p : pos){
+            inital -= p;
+        }
+        double [] neg = parseRsAsDouble(negAmount, "amount");
+        for(double n : neg){
+            inital += n;
+        }
+        return inital;
+    }
+
+	public ResultSet executeQ(String query){
+        ResultSet rs = null;
+        try{
+            Statement stmt = this._connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
+            rs = stmt.executeQuery(query);
+        }
+        catch(Exception e){
+            System.out.print("Something went wrong querying the server");
+            e.printStackTrace();
+        }
+        return rs;
+    }
+
 	public String setDate( int year, int month, int day ){
 		String sYear = Integer.toString(year);
 		String sMonth = Integer.toString(month);
@@ -660,22 +724,43 @@ public class Transactions extends App{
         }
   	}
 
-    // public String[] parseResultSetString(ResultSet rs, String key){
-	// 	try{
-	// 	ArrayList al = new ArrayList();
-	// 	while(rs.next()) {
-	// 		String id = rs.getString(key);
-	// 		al.add(id.trim());
-	// 	}
-	// 	rs.beforeFirst();
-	// 	String[] a = new String[al.size()];
-	// 	al.toArray(a);
-	// 	return a;
-	// 	}catch(SQLException e){
-	// 	e.printStackTrace();
-	// 	}
-	// 		return null;
-	// 	}
-	// //FOR ATM, deposit, top-up, withdrawal, purchase, transfer, collect, wire, pay-friend
-    // //FOR Bank
+	public String[] parseRsAsString(ResultSet rs, String key){
+        try{
+            ArrayList<String> rsStringOutput = new ArrayList<String>();     
+   
+            while(rs.next()){
+                String id = rs.getString(key);
+                rsStringOutput.add(id.trim());        
+            }
+            rs.beforeFirst();
+            String[] a = new String[rsStringOutput.size()];
+            rsStringOutput.toArray(a);
+            rs.close();
+            return a;
+        }catch(Exception e){
+            System.out.println("parserS: " + key + " " + e );
+        } 
+        String[] temp = {"no data"};
+        return temp;
+    }
+
+    public double[] parseRsAsDouble(ResultSet rs, String key){
+        try{
+            ArrayList<Double> rsDoubleOutput = new ArrayList<Double>();
+            while(rs.next()) {
+                Double id = rs.getDouble(key);
+                rsDoubleOutput.add(id);
+            }
+            rs.beforeFirst();
+            double[] temp = new double[rsDoubleOutput.size()];
+            for (int i = 0; i < temp.length; i++) {
+                temp[i] = rsDoubleOutput.get(i);
+            }
+            return temp;
+        }catch(Exception e){
+            System.out.println("parserD: "+ key + " " + e);
+        }
+        double[] temp = {1.1};
+        return temp;
+    }
 }

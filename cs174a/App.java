@@ -1,5 +1,8 @@
 package cs174a;                                             // THE BASE PACKAGE FOR YOUR APP MUST BE THIS ONE.  But you may add subpackages.
 
+// command to compile javac -d out/ -cp cs174a/ojdbc8.jar cs174a/*.java
+// command to run java -cp cs174a/ojdbc8.jar:out:. cs174a.Main
+// 
 // You may have as many imports as you need.
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -103,9 +106,8 @@ public class App implements Testable
 
 	@Override
 	public String dropTables(){
-		String[] tableNames = {"GLOBALDATE","CUSTOMER", "ACCOUNT","OWNS","INTEREST","TRANSACTION"};
+		String[] tableNames = {"GLOBALDATE", "CUSTOMER", "ACCOUNT","OWNS","INTEREST","TRANSACTION", "INTEREST_PAID"};
 		try{
-			System.out.println("Connecting to database");
 			Statement stmt = _connection.createStatement();
 
 			for(String i : tableNames){
@@ -130,7 +132,6 @@ public class App implements Testable
     @Override
     public String createTables(){
     	try{
-    		System.out.println("Connecting to database");
     		Statement statement = _connection.createStatement();
 
     		try {
@@ -228,6 +229,18 @@ public class App implements Testable
     			System.out.println(e);
     			return "1";
     		}
+
+			try {
+    			System.out.println("Creating table InterestPaid");
+    			String sql = "CREATE TABLE Interest_Paid (" +
+    										"paid INTEGER )";
+    			statement.executeUpdate(sql);
+    		} catch (Exception e) {
+    			System.out.println("Failed making table InterestPaid");
+    			System.out.println(e);
+    			return "1";
+    		}
+
     	} catch (Exception e) {
     		System.out.println("Failed making tables");
     		System.out.println(e);
@@ -319,7 +332,6 @@ public class App implements Testable
 		try {
 
 				Statement stmt = _connection.createStatement();
-				System.out.println("Writing to table GlobalDate");
 				try{
 
 					String sqlDate = "DATE'"+s+"'";
@@ -346,7 +358,6 @@ public class App implements Testable
 	public String listClosedAccounts()
 	{
 		String s = "0";
-
 		try {
 			Statement stmt = _connection.createStatement();
 
@@ -457,7 +468,7 @@ public class App implements Testable
 				}
 
 				try {
-					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialBalance+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', NULL, "+parse(id)+", NULL)");
+					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialBalance+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', "+parse(id)+", NULL, NULL)");
 				} catch(Exception e) {
 					System.out.println("Couldn't add to Transactions");
 					System.out.println(e);
@@ -474,7 +485,6 @@ public class App implements Testable
 			System.out.println(e);
 			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 		}
-
 		return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
 	}
 
@@ -511,7 +521,6 @@ public class App implements Testable
 				}
 				rs.close();
 			} catch(Exception e) {
-
 				System.out.println(e);
 				return "1 " + id + " POCKET " + initialTopUp+ " " + tin;
 			}
@@ -545,7 +554,7 @@ public class App implements Testable
 			}
 
 			try {
-				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialTopUp+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'TOPUP', '"+generateRandomChars(9)+"', "+parse(linkedId)+", "+parse(id)+", NULL)");
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+initialTopUp+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'top-up', '"+generateRandomChars(9)+"', "+parse(id)+", "+parse(linkedId)+", NULL)");
 			} catch(Exception e) {
 				System.out.println("Couldn't add to Transactions");
 				System.out.println(e);
@@ -657,7 +666,6 @@ public class App implements Testable
 		}
 		try {
 			Statement stmt = _connection.createStatement();
-
 			try {
 				ResultSet rs = stmt.executeQuery("SELECT a_id FROM Account WHERE a_id = "+parse(accountId)+" AND a_type = 'POCKET'");
 				if (rs.next()){
@@ -670,7 +678,6 @@ public class App implements Testable
 				System.out.println(e);
 				return "1";
 			}
-
 			try {
 				ResultSet rs = stmt.executeQuery("SELECT balance FROM Account WHERE a_id = "+parse(accountId));
 				if (rs.next()){
@@ -683,12 +690,11 @@ public class App implements Testable
 				System.out.println(e);
 				return "1";
 			}
-
 			try {
 				ResultSet rs = stmt.executeQuery("UPDATE Account SET balance = balance + "+amount+" WHERE a_id= "+parse(accountId));
 				if(rs.next()){
 					try {
-						stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', NULL, "+parse(accountId)+", NULL)");
+						stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'deposit', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL, NULL)");
 					} catch(Exception e) {
 						System.out.println("Couldn't add to Transactions");
 						System.out.println(e);
@@ -723,7 +729,6 @@ public class App implements Testable
 	public String showBalance( String accountId )
 	{
 		try(Statement stmt = _connection.createStatement()){
-
 			String sql = "SELECT a_id, balance, isClosed " +
 					"FROM Account " +
 					"WHERE a_id = " + parse(accountId);
@@ -856,7 +861,7 @@ public class App implements Testable
           		}
           		stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(to));
 				stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(from));
-				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'pay-friend', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+", NULL)");
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'pay-friend', '"+generateRandomChars(9)+"', "+parse(to)+", "+parse(from)+", NULL)");
           		if(isFirstTransactionOfMonth(from)){
             		stmt.executeQuery("UPDATE Account SET balance = balance-5 WHERE a_id= "+parse(from));
           		}
@@ -900,7 +905,7 @@ public class App implements Testable
             		return "1";
         			}
         		stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
-        		stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'withdraw', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL, NULL)");
+        		stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'withdraw', '"+generateRandomChars(9)+"', NULL, "+parse(accountId)+", NULL)");
     			}
     			closeAccountBalanceCheck(accountId);
 			} catch(Exception e) {
@@ -931,7 +936,7 @@ public class App implements Testable
             			return "1";
         			}
         			stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
-        			stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'withdraw', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL, NULL)");
+        			stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'purchase', '"+generateRandomChars(9)+"', NULL, "+parse(accountId)+", NULL)");
     				closeAccountBalanceCheck(accountId);
 				}
 			} catch(Exception e) {
@@ -976,7 +981,7 @@ public class App implements Testable
           		}
           		stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(to));
 				stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(from));
-				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'transfer', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+", NULL)");
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'transfer', '"+generateRandomChars(9)+"', "+parse(to)+", "+parse(from)+", NULL)");
 				closeAccountBalanceCheck(from);
         		closeAccountBalanceCheck(to);
 				return "0";
@@ -1015,7 +1020,7 @@ public class App implements Testable
 					}
 					stmt.executeQuery("UPDATE Account SET balance = balance -"+p_amount+" WHERE a_id = "+parse(accountId));
 					stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(linkedId));
-					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'collect', '"+generateRandomChars(9)+"', "+parse(accountId)+", "+parse(linkedId)+", NULL)");
+					stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'collect', '"+generateRandomChars(9)+"', "+parse(linkedId)+", "+parse(accountId)+", NULL)");
 					closeAccountBalanceCheck(linkedId);
 				}
 			} catch(Exception e) {
@@ -1053,7 +1058,7 @@ public class App implements Testable
           		}
           		stmt.executeQuery("UPDATE Account SET balance = balance +"+amount+" WHERE a_id = "+parse(to));
 				stmt.executeQuery("UPDATE Account SET balance = balance -"+fee_amount+" WHERE a_id = "+parse(from));
-				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'transfer', '"+generateRandomChars(9)+"', "+parse(from)+", "+parse(to)+", NULL)");
+				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'transfer', '"+generateRandomChars(9)+"', "+parse(to)+", "+parse(from)+", NULL)");
 			}
         	closeAccountBalanceCheck(from);
         	closeAccountBalanceCheck(to);
@@ -1089,7 +1094,7 @@ public class App implements Testable
 					return "1";
 				}
 			stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
-			stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'write_check', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL, "+ generateRandomChars(20) +")");
+			stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'write_check', '"+generateRandomChars(9)+"', NULL, "+parse(accountId)+", "+ generateRandomChars(20) +")");
 			closeAccountBalanceCheck(accountId);
 			}
 		
@@ -1123,10 +1128,10 @@ public class App implements Testable
   		populate_customers("cs174a/inputs/customers.csv");
     	populate_accounts("cs174a/inputs/accounts.csv");
     	populate_owns("cs174a/inputs/owns.csv");
-    	//populate_transactions("cs174a/inputs/transactions.csv");
+    	populate_transactions("cs174a/inputs/transactions.csv");
     	populate_interest("cs174a/inputs/interest.csv");
     	populate_date();
-    // 	populate_interest_paid();
+     	populate_interest_paid();
   	}
 
 	public void populate_customers(String filename){
@@ -1224,7 +1229,6 @@ public class App implements Testable
 		        String amount = columns[1];
 		        String type = parse(columns[2]);
 		        String date = "TO_DATE(" + parse(columns[3]) + ", 'MM-DD-YYYY')";
-		        System.out.println(date);
 		        String check_no = parseNULL(columns[4]);
 		        String send_id = parseNULL(columns[5]);
 		        String rec_id;
@@ -1284,6 +1288,14 @@ public class App implements Testable
 		setDate(2011, 3, 14);
 	}
 
+	public void populate_interest_paid() {
+		try {
+			Statement stmt = _connection.createStatement();
+			stmt.executeQuery("INSERT INTO Interest_Paid VALUES (0)");
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+	}
 
   	public String getDate(){
     	try{
@@ -1414,7 +1426,6 @@ public class App implements Testable
     	}
     	return true;
   	}
-
 	//check if accountType is not POCKET
 	//balance Too Low, cant use
 	//
