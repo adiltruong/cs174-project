@@ -20,8 +20,8 @@ public class BankTeller extends App{
     }
     //main functions
     public String checkTransaction(String accountID, double amount){
-        this.t.writeCheck(accountID, amount);
-        return "0";
+        return this.t.writeCheck(accountID, amount);
+             
     }
     public String generateMonthlyStatement(String taxID){
         String statement = "";

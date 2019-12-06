@@ -113,7 +113,7 @@ public class Main
 		boolean systemOn = true;
 		Scanner myObj = new Scanner(System.in);
 		ATM_Interface atm_Interface = new ATM_Interface(app.getConnection());
-
+		BankTeller_Interface bankTeller_Interface = new BankTeller_Interface(app.getConnection());
 		while(systemOn) {
 			System.out.println();
 			System.out.println("Welcome to Debts R Us! What would you like to do today?");
@@ -152,15 +152,39 @@ public class Main
 					rr = app.login(taxID, pin);
 					loginTries++;
 					if(!rr)
-						System.out.println("big oof you goofed, Try again.");
+						System.out.println("Incorrect login information. Please try again.");
 				}
 				if(rr) {
-					atm_Interface.startATM(myObj, taxID, true);
+					atm_Interface.startATM(myObj, taxID);
 				}
-				
-		 	}
+			}
+			if(option == 1){ //Bank teller interface
+				bankTeller_Interface.tellerInterace(myObj, true);
+			}
+			if(option == 2){ //set system date
+				System.out.println("\nSet System Date:\n");
+				System.out.println("Year:\n");
+				int year = myObj.nextInt();
+				System.out.println("\nMonth:\n");
+				int month = myObj.nextInt();
+				System.out.println("\nDay:\n");
+				int day = myObj.nextInt();
+				app.setDate(year, month, day);
+			}
+			if(option == 3){ //Set Interest Rate
+				System.out.println("\nAccount Type:\n");
+				String accountType = myObj.next();
+				System.out.println("\nRate:");
+				double rate = myObj.nextDouble();
+				if(accountType == "INTEREST_CHECKING")
+					System.out.println("\nInterest Rate Code: " + app.setInterestRate(AccountType.INTEREST_CHECKING, rate));
+				else if(accountType == "SAVING")
+					System.out.println("\nInterest Rate Code: " + app.setInterestRate(AccountType.SAVINGS, rate));
+				else
+					System.out.println("\nInvalid Input... Exiting...\n");
+			}
 			if(option == 4){
-				System.out.println("Goodbye...\n");
+				System.out.println("\nGoodbye...\n");
 				systemOn = false;
 			}
 	//!### FINALIZAMOS

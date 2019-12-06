@@ -406,11 +406,8 @@ public class Transactions extends App{
 				if(balTooLow(accountId, amount)){
 					return "1";
 				}
-				System.out.println("ouhasfuha");
 				stmt.executeQuery("UPDATE Account SET balance = balance -"+amount+" WHERE a_id = "+parse(accountId));
-				System.out.println("ouhasfuha");
 				stmt.executeQuery("INSERT INTO Transaction VALUES ( "+amount+", TO_DATE('"+getDate()+"', 'YYYY-MM-DD HH24:MI:SS'), 'write_check', '"+generateRandomChars(9)+"', "+parse(accountId)+", NULL, '" + generateRandomChars(20) + "')");
-				System.out.println("ouhasfuha");
 				closeAccountBalanceCheck(accountId);
 			}
 		

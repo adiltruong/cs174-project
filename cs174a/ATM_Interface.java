@@ -9,17 +9,16 @@ import cs174a.*;
 public class ATM_Interface{
     private OracleConnection _connection;
     private Transactions transaction;
-    private BankTeller bankTeller;
-    //private Transactions transaction;
+    private boolean atmOn;
     public ATM_Interface(OracleConnection _connection){
         this._connection = _connection;
-        transaction = new Transactions(_connection);
-        bankTeller = new BankTeller(_connection);
+        this.transaction = new Transactions(_connection);
+        this.atmOn = true;
     }
     private OracleConnection getConnection(){
         return this._connection;
     }
-    public void startATM(Scanner myObj, String taxID, boolean atmOn){
+    public void startATM(Scanner myObj, String taxID){
         while(atmOn){
             Customer customer = new Customer(taxID, this.getConnection());
             System.out.println("ATM Inferface Options");
@@ -47,9 +46,9 @@ public class ATM_Interface{
                 System.out.println();
                 double amount = myObj.nextDouble();
                 System.out.println(transaction.deposit(account, amount));
+                System.out.println();
 
-            }
-            if(input == 1){//Top-up
+            }else if(input == 1){//Top-up
                 System.out.println();
                 System.out.println("Which account would you like to top up with?");
                 System.out.println();
@@ -59,8 +58,8 @@ public class ATM_Interface{
                 System.out.println();
                 double amount = myObj.nextDouble();
                 System.out.println(transaction.topUp(account, amount));
-            }
-            if(input == 2){//Withdrawl
+                System.out.println();
+            }else if(input == 2){//Withdrawl
                 System.out.println();
                 System.out.println("Which account would you like to withdraw from?");
                 System.out.println();
@@ -70,8 +69,8 @@ public class ATM_Interface{
                 System.out.println();
                 double amount = myObj.nextDouble();
                 System.out.println(transaction.withdraw(account, amount));
-            }
-            if(input == 3){//Purchase
+                System.out.println();
+            }else if(input == 3){//Purchase
                 System.out.println();
                 System.out.println("Which account would you like to purchase with?");
                 System.out.println();
@@ -81,8 +80,8 @@ public class ATM_Interface{
                 System.out.println();
                 double amount = myObj.nextDouble();
                 System.out.println(transaction.purchase(account, amount));
-            }
-            if(input == 4){//Transfer
+                System.out.println();
+            }else if(input == 4){//Transfer
                 System.out.println();
                 System.out.println("Which account would you like to transfer from?");
                 System.out.println();
@@ -96,8 +95,8 @@ public class ATM_Interface{
                 System.out.println();
                 double amount = myObj.nextDouble();
                 System.out.println(transaction.transfer(from, to, amount));
-            }
-            if(input == 5){//Collect
+                System.out.println();
+            }else if(input == 5){//Collect
                 System.out.println();
                 System.out.println("Which account would you collect from?");
                 System.out.println();
@@ -107,8 +106,8 @@ public class ATM_Interface{
                 System.out.println();
                 double amount = myObj.nextDouble();
                 System.out.println(transaction.collect(account, amount));
-            }
-            if(input == 6){//Wire
+                System.out.println();
+            }else if(input == 6){//Wire
                 System.out.println();
                 System.out.println("Which account would you like to wire money from?");
                 System.out.println();
@@ -122,8 +121,8 @@ public class ATM_Interface{
                 System.out.println();
                 double amount = myObj.nextDouble();
                 System.out.println(transaction.wire(from, to, amount));
-            }
-            if(input == 7){//Pay Friend
+                System.out.println();
+            }else if(input == 7){//Pay Friend
                 System.out.println();
                 System.out.println("Which pocket account would you like to pay from?");
                 System.out.println();
@@ -137,8 +136,8 @@ public class ATM_Interface{
                 System.out.println();
                 double amount = myObj.nextDouble();
                 System.out.println(transaction.payFriend(from, to, amount));
-            }
-            if(input == 8){//Set Pin
+                System.out.println();
+            }else if(input == 8){//Set Pin
                 System.out.println();
                 System.out.println("Verify PIN first:");
                 System.out.println();
@@ -152,12 +151,15 @@ public class ATM_Interface{
                 }else{
                     System.out.println("Invalid PIN...\nReturning to ATM menu...\n");
                 }
-            }
-            if (input == 9) {//Leave ATM
+            }else if (input == 9) {//Leave ATM
                 System.out.println();
                 System.out.println("Exiting ATM...\nGoodbye...");
                 System.out.println();
                 atmOn = false;
+            }else{
+                System.out.println();
+                System.out.println("Error 404: Input not found...");
+                System.out.println();
             }
         }
     }
