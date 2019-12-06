@@ -69,45 +69,45 @@ public class Main
 			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "account5", 1234.56, "taxID", "Im YoungMing", "Known" );
 			System.out.println( r );
 
-			r = app.showBalance("account5");
-			System.out.println("BALANCE for 5:" + r);
+			// r = app.showBalance("account5");
+			// System.out.println("BALANCE for 5:" + r);
 						
-			r = app.showBalance("account1");
-			System.out.println("BALANCE for 1:" + r);
+			// r = app.showBalance("account1");
+			// System.out.println("BALANCE for 1:" + r);
 
-			r = transactions.writeCheck("account5", 20.0);
-			System.out.println( r );
+			// r = transactions.writeCheck("account5", 20.0);
+			// System.out.println( r );
 
-			r = bankTeller.checkTransaction("account5", 20.0);
-			System.out.println( r );
+			// r = bankTeller.checkTransaction("account5", 20.0);
+			// System.out.println( r );
 
-			r = bankTeller.checkTransaction("account5", 50.0);
-			System.out.println( r );
+			// r = bankTeller.checkTransaction("account5", 50.0);
+			// System.out.println( r );
 
 
-			r = app.showBalance("account5");
-			System.out.println("BALANCE for 5:" + r);
+			// r = app.showBalance("account5");
+			// System.out.println("BALANCE for 5:" + r);
 
-			r = app.showBalance("account1");
-			System.out.println("BALANCE for 1:" + r);
+			// r = app.showBalance("account1");
+			// System.out.println("BALANCE for 1:" + r);
 
 			
-			//System.out.println(customer.setPIN("1717","2727"));
-			System.out.println("TESTING>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n");
-			//System.out.println(bankTeller.generateMonthlyStatement("taxID"));
-			//System.out.println(bankTeller.listClosedAccounts());
-			r = app.showBalance("account3");
-			System.out.println("BALANCE for 3:" + r);
-			r = app.showBalance("account5");
-			System.out.println("BALANCE for 5:" + r);
-			r = transactions.wire("account3","account5", 100000);
-			System.out.println("wire: " + r);
-			r = app.showBalance("account5");
-			System.out.println("BALANCE for 5:" + r);
-			r = app.showBalance("account3");
-			System.out.println("BALANCE for 3:" + r);
-			System.out.println("Wire: " + r);
-			System.out.println(bankTeller.generateDTER());
+			// //System.out.println(customer.setPIN("1717","2727"));
+			// System.out.println("TESTING>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n");
+			// //System.out.println(bankTeller.generateMonthlyStatement("taxID"));
+			// //System.out.println(bankTeller.listClosedAccounts());
+			// r = app.showBalance("account3");
+			// System.out.println("BALANCE for 3:" + r);
+			// r = app.showBalance("account5");
+			// System.out.println("BALANCE for 5:" + r);
+			// r = transactions.wire("account3","account5", 100000);
+			// System.out.println("wire: " + r);
+			// r = app.showBalance("account5");
+			// System.out.println("BALANCE for 5:" + r);
+			// r = app.showBalance("account3");
+			// System.out.println("BALANCE for 3:" + r);
+			// System.out.println("Wire: " + r);
+			// System.out.println(bankTeller.generateDTER());
 			
 
 		boolean systemOn = true;
@@ -138,21 +138,22 @@ public class Main
 				while (loginTries < 3 && !rr) {
 					System.out.println();
 					System.out.println("Welcome to Debts R Us ATM");
-					System.out.println("Please log in...");
+					System.out.println("Please log in...\nEnter to quit\n");
 					System.out.println();
 					System.out.println("TaxID:");
-					
 					String tempTaxID = myObj.next();
-					taxID = tempTaxID;
-					System.out.println();
-					System.out.println("PIN:");					
-					String tempPin = myObj.next();
-					pin = tempPin;
-					System.out.println();
-					rr = app.login(taxID, pin);
-					loginTries++;
-					if(!rr)
-						System.out.println("Incorrect login information. Please try again.");
+					if(tempTaxID != ""){
+						taxID = tempTaxID;
+						System.out.println();
+						System.out.println("PIN:");					
+						String tempPin = myObj.next();
+						pin = tempPin;
+						System.out.println();
+						rr = app.login(taxID, pin);
+						loginTries++;
+						if(!rr)
+							System.out.println("Incorrect login information. Please try again.");
+					}
 				}
 				if(rr) {
 					atm_Interface.startATM(myObj, taxID);

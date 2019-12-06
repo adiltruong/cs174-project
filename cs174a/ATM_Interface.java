@@ -15,9 +15,6 @@ public class ATM_Interface{
         this.transaction = new Transactions(_connection);
         this.atmOn = true;
     }
-    private OracleConnection getConnection(){
-        return this._connection;
-    }
     public void startATM(Scanner myObj, String taxID){
         while(atmOn){
             Customer customer = new Customer(taxID, this.getConnection());
@@ -41,102 +38,133 @@ public class ATM_Interface{
                 System.out.println("Which account would you like to deposit to?");
                 System.out.println();
                 String account = myObj.next();
-                System.out.println();
-                System.out.println("How much would you like to deposit?");
-                System.out.println();
-                double amount = myObj.nextDouble();
-                System.out.println(transaction.deposit(account, amount));
-                System.out.println();
-
+                if (this.ownsAccount(taxID, account)){
+                    System.out.println();
+                    System.out.println("How much would you like to deposit?");
+                    System.out.println();
+                    double amount = myObj.nextDouble();
+                    System.out.println(transaction.deposit(account, amount));
+                    System.out.println();
+                }else{
+                    System.out.println("\nAccess Restricted: You do not own this account.\n");
+                }
             }else if(input == 1){//Top-up
                 System.out.println();
                 System.out.println("Which account would you like to top up with?");
                 System.out.println();
                 String account = myObj.next();
-                System.out.println();
-                System.out.println("How much would you like to top up with?");
-                System.out.println();
-                double amount = myObj.nextDouble();
-                System.out.println(transaction.topUp(account, amount));
-                System.out.println();
+                if (this.ownsAccount(taxID, account)){
+                    System.out.println();
+                    System.out.println("How much would you like to top up with?");
+                    System.out.println();
+                    double amount = myObj.nextDouble();
+                    System.out.println(transaction.topUp(account, amount));
+                    System.out.println();
+                }else{
+                    System.out.println("\nAccess Restricted: You do not own this account.\n");
+                }
             }else if(input == 2){//Withdrawl
                 System.out.println();
                 System.out.println("Which account would you like to withdraw from?");
                 System.out.println();
                 String account = myObj.next();
-                System.out.println();
-                System.out.println("How much would you like to withdraw?");
-                System.out.println();
-                double amount = myObj.nextDouble();
-                System.out.println(transaction.withdraw(account, amount));
-                System.out.println();
+                if (this.ownsAccount(taxID, account)){
+                    System.out.println();
+                    System.out.println("How much would you like to withdraw?");
+                    System.out.println();
+                    double amount = myObj.nextDouble();
+                    System.out.println(transaction.withdraw(account, amount));
+                    System.out.println();
+                }else{
+                    System.out.println("\nAccess Restricted: You do not own this account.\n");
+                }
             }else if(input == 3){//Purchase
                 System.out.println();
                 System.out.println("Which account would you like to purchase with?");
                 System.out.println();
                 String account = myObj.next();
-                System.out.println();
-                System.out.println("How much would you like to use?");
-                System.out.println();
-                double amount = myObj.nextDouble();
-                System.out.println(transaction.purchase(account, amount));
-                System.out.println();
+                if (this.ownsAccount(taxID, account)){
+                    System.out.println();
+                    System.out.println("How much would you like to use?");
+                    System.out.println();
+                    double amount = myObj.nextDouble();
+                    System.out.println(transaction.purchase(account, amount));
+                    System.out.println();
+                }else{
+                    System.out.println("\nAccess Restricted: You do not own this account.\n");
+                }
             }else if(input == 4){//Transfer
                 System.out.println();
                 System.out.println("Which account would you like to transfer from?");
                 System.out.println();
                 String from = myObj.next();
-                System.out.println();
-                System.out.println("Which account would you like to transfer to?");
-                System.out.println();
-                String to = myObj.next();
-                System.out.println();
-                System.out.println("How much would you like to transfer?");
-                System.out.println();
-                double amount = myObj.nextDouble();
-                System.out.println(transaction.transfer(from, to, amount));
-                System.out.println();
+                if (this.ownsAccount(taxID, from)){
+                    System.out.println();
+                    System.out.println("Which account would you like to transfer to?");
+                    System.out.println();
+                    String to = myObj.next();
+                    System.out.println();
+                    System.out.println("How much would you like to transfer?");
+                    System.out.println();
+                    double amount = myObj.nextDouble();
+                    System.out.println(transaction.transfer(from, to, amount));
+                    System.out.println();
+                }else{
+                    System.out.println("\nAccess Restricted: You do not own this account.\n");
+                }
             }else if(input == 5){//Collect
                 System.out.println();
                 System.out.println("Which account would you collect from?");
                 System.out.println();
                 String account = myObj.next();
-                System.out.println();
-                System.out.println("How much would you like to collect?");
-                System.out.println();
-                double amount = myObj.nextDouble();
-                System.out.println(transaction.collect(account, amount));
-                System.out.println();
+                if (this.ownsAccount(taxID, account)){
+                    System.out.println();
+                    System.out.println("How much would you like to collect?");
+                    System.out.println();
+                    double amount = myObj.nextDouble();
+                    System.out.println(transaction.collect(account, amount));
+                    System.out.println();
+                }else{
+                    System.out.println("\nAccess Restricted: You do not own this account.\n");
+                }
             }else if(input == 6){//Wire
                 System.out.println();
                 System.out.println("Which account would you like to wire money from?");
                 System.out.println();
                 String from = myObj.next();
-                System.out.println();
-                System.out.println("Which account would you like to wire money to?");
-                System.out.println();
-                String to = myObj.next();
-                System.out.println();
-                System.out.println("How much would you like to wire?");
-                System.out.println();
-                double amount = myObj.nextDouble();
-                System.out.println(transaction.wire(from, to, amount));
-                System.out.println();
+                if (this.ownsAccount(taxID, from)){
+                    System.out.println();
+                    System.out.println("Which account would you like to wire money to?");
+                    System.out.println();
+                    String to = myObj.next();
+                    System.out.println();
+                    System.out.println("How much would you like to wire?");
+                    System.out.println();
+                    double amount = myObj.nextDouble();
+                    System.out.println(transaction.wire(from, to, amount));
+                    System.out.println();
+                }else{
+                    System.out.println("\nAccess Restricted: You do not own this account.\n");
+                }
             }else if(input == 7){//Pay Friend
                 System.out.println();
                 System.out.println("Which pocket account would you like to pay from?");
                 System.out.println();
                 String from = myObj.next();
-                System.out.println();
-                System.out.println("Which pocket account would you like to pay?");
-                System.out.println();
-                String to = myObj.next();
-                System.out.println();
-                System.out.println("How much would you like to pay?");
-                System.out.println();
-                double amount = myObj.nextDouble();
-                System.out.println(transaction.payFriend(from, to, amount));
-                System.out.println();
+                if (this.ownsAccount(taxID, from)){
+                    System.out.println();
+                    System.out.println("Which pocket account would you like to pay?");
+                    System.out.println();
+                    String to = myObj.next();
+                    System.out.println();
+                    System.out.println("How much would you like to pay?");
+                    System.out.println();
+                    double amount = myObj.nextDouble();
+                    System.out.println(transaction.payFriend(from, to, amount));
+                    System.out.println();
+                }else{
+                    System.out.println("\nAccess Restricted: You do not own this account.\n");
+                }
             }else if(input == 8){//Set Pin
                 System.out.println();
                 System.out.println("Verify PIN first:");
@@ -162,5 +190,45 @@ public class ATM_Interface{
                 System.out.println();
             }
         }
+    }
+    //helper
+    private OracleConnection getConnection(){
+        return this._connection;
+    }
+    private boolean ownsAccount(String taxID, String account){
+        try(Statement stmt = this._connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY)){
+            ResultSet rs = stmt.executeQuery("SELECT a_id " +
+                                        "FROM Owns O " + 
+                                        "WHERE taxID = '" + taxID + "'");
+            String [] a_id = parseRsAsString(rs, "a_id");
+
+            for(int i = 0; i < a_id.length; i++){
+                if(a_id[i].equals(account)){
+                    return true;
+                } 
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return false;
+    }
+    public String[] parseRsAsString(ResultSet rs, String key){
+        try{
+            ArrayList<String> rsStringOutput = new ArrayList<String>();     
+   
+            while(rs.next()){
+                String id = rs.getString(key);
+                rsStringOutput.add(id.trim());        
+            }
+            rs.beforeFirst();
+            String[] a = new String[rsStringOutput.size()];
+            rsStringOutput.toArray(a);
+            rs.close();
+            return a;
+        }catch(Exception e){
+            System.out.println("parserS: " + key + " " + e );
+        } 
+        String[] temp = {"no data"};
+        return temp;
     }
 }
