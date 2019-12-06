@@ -25,9 +25,9 @@ public class BankTeller extends App{
     }
 
     public String generateMonthlyStatement(String taxID){
-        // if (!isLastDay()){
-        //     return "1";
-        // }
+        if (!isLastDay()){
+            return "1 Not Last Day";
+        }
         String statement = "";
         double totalMonthlyBalance = 0.00;
         try{
@@ -130,9 +130,9 @@ public class BankTeller extends App{
     }
 
    public String generateDTER(){
-    //    if (!isLastDay()){
-    //         return "1";
-    //     }
+       if (!isLastDay()){
+            return "1 Not Last Day";
+        }
         try{
             String dter = "Government Drug and Tax Evasion Report:\n";
             ResultSet customers = this.executeQ("SELECT O.taxID " +
@@ -186,13 +186,13 @@ public class BankTeller extends App{
     }
 
     public String addInterest(){
-        // if (!isLastDay()){
-        //     return "1";
-        // }
+        if (!isLastDay()){
+            return "1 Not Last Day";
+        }
 
-        // if (interestPaid()){
-        //     return "1";
-        // }
+        if (interestPaid()){
+             return "1 Interest already added for the month";
+         }
 
         ResultSet openAcc_id = this.executeQ("SELECT a_id "+
                                                     "FROM Account "+
@@ -298,9 +298,9 @@ public class BankTeller extends App{
         return "0";
     }
     public String deleteClosedAccountsCustomers(){
-        // if (!isLastDay()){
-        //     return "1";
-        // }
+        if (!isLastDay()){
+            return "1 Not Last Day";
+        }
         try{
             this.executeQ("DELETE FROM Account " + 
                           "WHERE isClosed = 1 ");
@@ -317,9 +317,9 @@ public class BankTeller extends App{
         return "1";
     }
     public String deleteTransactions(){
-        // if (!isLastDay()){
-        //     return "1";
-        // }
+        if (!isLastDay()){
+            return "1 Not Last Day";
+        }
         try {
             this.executeQ("DELETE FROM Transaction");
             return "0";
@@ -442,8 +442,10 @@ public class BankTeller extends App{
     public boolean interestPaid() {
         try {
             ResultSet rs = this.executeQ("SELECT * FROM Interest_Paid");
-            int paid = rs.getInt("paid");
-            return (paid == 1);
+            if (rs.next()) {
+                int paid = rs.getInt("paid");
+                return (paid == 1);
+            }
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -451,12 +453,20 @@ public class BankTeller extends App{
     }
 
     public String setDateQ(int year, int month, int day) {
+        if (interestPaid()) { //interest updated able to go to next month
+        try {
+            this.executeQ("UPDATE Interest_Paid SET paid = 0 WHERE paid = 1");
+            return setDateB(year, month, day);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        }
         try {
             ResultSet rMonth = this.executeQ("SELECT MAX(EXTRACT(MONTH from globalDate)) AS \"month\" "+
-                                            "FROM GlobalDate");
+                                                "FROM GlobalDate");
             ResultSet rYear = this.executeQ("SELECT MAX(EXTRACT(YEAR from globalDate)) AS \"year\""+
-                                            "FROM GlobalDate");
-            
+                                                "FROM GlobalDate");
+                
             if (rMonth.next() && rYear.next()) {
                 int qMonth = rMonth.getInt("month");
                 int qYear = rYear.getInt("year");
@@ -464,17 +474,18 @@ public class BankTeller extends App{
                     if (qMonth < month || qYear < year){
                         return setDateB(qYear, qMonth, daysInMonthLeap[qMonth-1]);
                     }
+                    return setDateB(year, month, day);
                 }
                 else {
                     if (qMonth < month || qYear < year){
-                        System.out.println(daysInMonthRegular[qMonth-1]);
                         return setDateB(qYear, qMonth, daysInMonthRegular[qMonth-1]);
                     }
+                    return setDateB(year, month, day);
+                    }
                 }
-            }
-            
-        } catch (Exception e) {
-            System.out.println(e);
+                
+            } catch (Exception e) {
+                System.out.println(e);
         }
         return "1";
     }
